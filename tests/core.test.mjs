@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {cards,fresh,transition,restore,keyInput} from '../dist/core.mjs';
+test('开始只洗牌一次，牌组不重不漏',()=>{const s=transition(fresh(),'start');assert.equal(new Set(s.deck).size,cards.length);assert.equal(transition(s,'start'),s);});
+test('旋转左右各一步，边缘循环，往返十格回到原位',()=>{const s=transition(fresh(),'start');assert.equal(transition(s,'right').selected,3);assert.equal(transition(s,'left').selected,1);let t=transition(s,0);assert.equal(transition(t,'left').selected,4);for(let i=0;i<10;i++)t=transition(t,'right');for(let i=0;i<10;i++)t=transition(t,'left');assert.equal(t.selected,0);});
+test('鼠标选择和键盘选择到同一位置时，抽到同一张',()=>{const s=transition(fresh(),'start');assert.deepEqual(transition(transition(s,3),'confirm'),transition(transition(s,'right'),'confirm'));});
+test('确认后方向、再次确认和开始都不能改变结果',()=>{const s=transition(transition(fresh(),'start'),'confirm');for(const action of ['left','right','confirm','start',0,4])assert.equal(transition(s,action),s);assert.equal(s.result,s.deck[s.selected]);assert.deepEqual(restore(JSON.stringify(s)),s);});
+test('按住、重复keydown仅执行一次，松开后允许下一次',()=>{const held=new Set();assert.equal(keyInput({code:'Enter'},held).duplicate,false);assert.equal(keyInput({code:'Enter',repeat:true},held).duplicate,true);assert.equal(keyInput({code:'Enter'},held).duplicate,true);held.delete('Enter');assert.equal(keyInput({code:'Enter'},held).duplicate,false);});
+test('小键盘兼容，组合键与输入法组合不触发',()=>{assert.equal(keyInput({code:'Numpad1'},new Set()).action,'start');assert.equal(keyInput({code:'NumpadEnter'},new Set()).action,'confirm');for(const modifier of ['isComposing','ctrlKey','metaKey','altKey','shiftKey'])assert.equal(keyInput({code:'Digit1',[modifier]:true},new Set()),null);});
+test('损坏的保存状态不会恢复为伪造结果',()=>{const s=transition(transition(fresh(),'start'),'confirm');assert.deepEqual(restore('{broken'),fresh());assert.deepEqual(restore(JSON.stringify({...s,result:'invented'})),fresh());assert.deepEqual(restore(JSON.stringify({...s,deck:Array(5).fill('moon')})),fresh());});

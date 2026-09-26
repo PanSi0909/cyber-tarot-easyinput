@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1018">
+  <meta name="description" content="用实体按键和旋钮，开启一次单张塔罗体验。">
+  <title>赛博塔罗 · Between Signals</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a1018'/%3E%3Cpath d='M16 4 20 12 28 16 20 20 16 28 12 20 4 16 12 12Z' fill='%23b5eadf'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✧</span> 赛博塔罗 <span class="brand-en">BETWEEN SIGNALS</span></a><span class="edition">单张体验 / 01</span></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">A MOMENT FOR YOURSELF</p><h1>让直觉，落在指尖。</h1><p class="intro-copy">想一件此刻在意的事。转动、停下，翻开属于这一刻的牌。</p></div><button class="quiet" id="show-input" aria-expanded="false" aria-controls="input-panel">输入验证 <span aria-hidden="true">↗</span></button></section>
+    <section class="workspace" aria-label="单张抽卡工作台">
+      <div class="tabletop">
+        <div class="table-meta"><span id="phase-label">01 / 准备</span><span>ONE CARD, ONE MOMENT</span></div>
+        <div class="ritual-heading"><h2 id="stage-title">先留一点空白</h2><p id="stage-hint">按下开始，让牌组为你展开。</p></div>
+        <div id="deck" class="deck" role="group" aria-label="五张待选牌"></div>
+        <div class="stage-controls"><button class="arrow" id="previous" aria-label="选择上一张牌" disabled>←</button><span id="selection-label">等待开始</span><button class="arrow" id="next" aria-label="选择下一张牌" disabled>→</button></div>
+        <button class="primary" id="main-action"><span id="main-label">开始抽卡</span><kbd id="main-key">1</kbd></button>
+        <p class="stage-message" id="stage-message" role="status" aria-live="polite">鼠标、电脑键盘或 EasyInput，任选一种开始。</p>
+      </div>
+      <aside class="reading" aria-label="本次解读"><div class="reading-label"><span>YOUR READING</span><span id="result-tag">待揭晓</span></div><div id="reading-content"><div class="empty-mark" aria-hidden="true">✧</div><h2>答案，慢一点出现。</h2><p>这里将留下你抽到的牌，<br>和一段供你思考的文字。</p><div class="reading-note">这一次只抽一张。<br>确认之后，牌面与解读会固定下来。</div></div><button id="new-round" class="quiet new-round" hidden>结束本次，重新抽牌 ↗</button><p class="sample-note">示例牌组 · 固定解读<br>用于娱乐与自我反思</p></aside>
+    </section>
+    <section class="control-strip" aria-label="操作提示"><div><span class="step-num">01</span><p><strong>开始</strong><span><kbd>1</kbd> 或 S1</span></p></div><div><span class="step-num">02</span><p><strong>选择牌背</strong><span><kbd>←</kbd> <kbd>→</kbd> 或旋转旋钮</span></p></div><div><span class="step-num">03</span><p><strong>确认翻牌</strong><span><kbd>Enter</kbd> 或短按旋钮</span></p></div></section>
+    <section id="input-panel" class="input-panel" hidden aria-labelledby="input-title">
+      <div class="input-header"><div><p class="eyebrow">INPUT CHECK</p><h2 id="input-title">看看网页收到了什么</h2></div><label class="test-toggle"><input type="checkbox" id="test-only"> 仅测试输入，不操作牌组</label></div>
+      <p>先点击页面空白处，再逐个短按。数字键 1–8、左右方向键和回车会在下方亮起。网页无法区分电脑键盘与开发板。</p>
+      <div id="key-monitor" class="key-monitor"></div>
+      <div class="input-summary"><span id="focus-status">页面可接收输入</span><span id="input-counts">收到 0 次 · 接受 0 次 · 忽略重复 0 次</span><button id="clear-log" class="quiet">清空记录</button></div>
+      <ol id="event-log" class="event-log" aria-label="最近输入记录"><li class="log-empty">还没有输入记录</li></ol>
+      <details><summary>如何配置 EasyInput</summary><ol class="setup-list"><li>先截图保存当前按键和旋钮配置。第一轮只需配置 S1 和旋钮。</li><li>S1 设为发送普通数字键 <strong>1</strong>；旋钮逆时针设为左方向键，顺时针设为右方向键，短按设为回车。</li><li>保存并同步，等待 App 明确确认成功。不要用“固定文字”或“滚动页面”代替普通键盘动作。</li><li>如需验证全部八键，可临时把 S1–S8 设为数字 1–8，并开启“仅测试输入”；测试完恢复未使用的键位。</li><li>慢转右侧 10 格、再左侧 10 格。逐次检查是否各收到一个有效输入。浏览器不会替固件修正方向或每格多发。</li></ol><p>沿用当前固件，不需要 BOOT 或烧录。切换到其他应用后，本页不接收键盘操作。</p><a href="https://waytoagi.feishu.cn/wiki/A64iwQCt5i0T1wkjHqGcMd6OnZf" target="_blank" rel="noreferrer">查看第 6 课配置依据 ↗</a></details>
+    </section>
+  </main>
+  <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>原型 V0.1</span></footer>
+  <dialog id="reset-dialog"><h2>开始新的一次？</h2><p>当前牌面和解读将被清除。新的一次会重新洗牌。</p><div><button id="cancel-reset" class="quiet">保留本次</button><button id="confirm-reset" class="primary">重新开始</button></div></dialog>
+</body>
+</html>
