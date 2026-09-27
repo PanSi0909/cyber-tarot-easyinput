@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cards,fresh,transition,restore,keyInput} from '../dist/core.mjs';
+import {cards,fresh,transition,restore,keyInput,recognitionFailureMessage} from '../dist/core.mjs';
 test('开始只洗牌一次，牌组不重不漏',()=>{const s=transition(fresh(),'start');assert.equal(new Set(s.deck).size,cards.length);assert.equal(transition(s,'start'),s);});
 test('旋转左右各一步，边缘循环，往返十格回到原位',()=>{const s=transition(fresh(),'start');assert.equal(transition(s,'right').selected,3);assert.equal(transition(s,'left').selected,1);let t=transition(s,0);assert.equal(transition(t,'left').selected,4);for(let i=0;i<10;i++)t=transition(t,'right');for(let i=0;i<10;i++)t=transition(t,'left');assert.equal(t.selected,0);});
 test('鼠标选择和键盘选择到同一位置时，抽到同一张',()=>{const s=transition(fresh(),'start');assert.deepEqual(transition(transition(s,3),'confirm'),transition(transition(s,'right'),'confirm'));});
@@ -8,3 +8,7 @@ test('确认后方向、再次确认和开始都不能改变结果',()=>{const s
 test('按住、重复keydown仅执行一次，松开后允许下一次',()=>{const held=new Set();assert.equal(keyInput({code:'Enter'},held).duplicate,false);assert.equal(keyInput({code:'Enter',repeat:true},held).duplicate,true);assert.equal(keyInput({code:'Enter'},held).duplicate,true);held.delete('Enter');assert.equal(keyInput({code:'Enter'},held).duplicate,false);});
 test('小键盘兼容，组合键与输入法组合不触发',()=>{assert.equal(keyInput({code:'Numpad1'},new Set()).action,'start');assert.equal(keyInput({code:'NumpadEnter'},new Set()).action,'confirm');for(const modifier of ['isComposing','ctrlKey','metaKey','altKey','shiftKey'])assert.equal(keyInput({code:'Digit1',[modifier]:true},new Set()),null);});
 test('损坏的保存状态不会恢复为伪造结果',()=>{const s=transition(transition(fresh(),'start'),'confirm');assert.deepEqual(restore('{broken'),fresh());assert.deepEqual(restore(JSON.stringify({...s,result:'invented'})),fresh());assert.deepEqual(restore(JSON.stringify({...s,deck:Array(5).fill('moon')})),fresh());});
+test('S3 和小键盘 3 共用语音提问动作',()=>{assert.equal(keyInput({code:'Digit3'},new Set()).action,'question');assert.equal(keyInput({code:'Numpad3'},new Set()).action,'question');});
+test('只有确认后的问题进入会话并随抽卡状态恢复',()=>{const idle=fresh();const confirmed=transition(idle,{type:'set-question',value:'  我该如何开始？  '});assert.equal(confirmed.question,'我该如何开始？');assert.equal(transition(idle,{type:'set-question',value:'   '}),idle);const selecting=transition(confirmed,'start',()=>0.5);assert.equal(selecting.question,'我该如何开始？');assert.deepEqual(restore(JSON.stringify(selecting)),selecting);});
+test('旧版会话可恢复，无效问题不会进入会话',()=>{const old={phase:'idle',deck:[],selected:0,result:null};assert.deepEqual(restore(JSON.stringify(old)),fresh());assert.deepEqual(restore(JSON.stringify({...old,question:'x'.repeat(281)})),fresh());});
+test('麦克风拒绝或不可用时明确引导文字输入',()=>{assert.match(recognitionFailureMessage('not-allowed'),/麦克风权限.*文字输入/);assert.match(recognitionFailureMessage('audio-capture'),/没有找到.*麦克风.*文字输入/);assert.match(recognitionFailureMessage('unknown'),/语音识别失败.*文字输入/);});

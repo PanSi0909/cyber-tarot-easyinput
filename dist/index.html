@@ -4,16 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a1018">
-  <meta name="description" content="用实体按键和旋钮，开启一次单张塔罗体验。">
+  <meta name="description" content="用实体按键、旋钮和语音问题，开启一次单张塔罗体验。">
   <title>赛博塔罗 · Between Signals</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a1018'/%3E%3Cpath d='M16 4 20 12 28 16 20 20 16 28 12 20 4 16 12 12Z' fill='%23b5eadf'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-  <script type="module" src="app.mjs"></script>
+  <link rel="stylesheet" href="styles.css?v=0.2.1">
+  <script type="module" src="app.mjs?v=0.2.1"></script>
 </head>
 <body>
   <header class="topbar"><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✧</span> 赛博塔罗 <span class="brand-en">BETWEEN SIGNALS</span></a><span class="edition">单张体验 / 01</span></header>
   <main>
     <section class="intro"><div><p class="eyebrow">A MOMENT FOR YOURSELF</p><h1>让直觉，落在指尖。</h1><p class="intro-copy">想一件此刻在意的事。转动、停下，翻开属于这一刻的牌。</p></div><button class="quiet" id="show-input" aria-expanded="false" aria-controls="input-panel">输入验证 <span aria-hidden="true">↗</span></button></section>
+    <section class="question-bar" aria-label="本次占卜问题">
+      <div><p class="eyebrow">ASK BEFORE YOU DRAW</p><h2>把问题说出来，也可以输入。</h2><p id="current-question">尚未确认问题。语音识别文字只有确认后才会进入本次占卜。</p></div>
+      <div class="question-command"><span class="question-state" data-state="idle">待机</span><button class="quiet" id="question-action">语音提问 <kbd>3</kbd></button></div>
+    </section>
     <section class="workspace" aria-label="单张抽卡工作台">
       <div class="tabletop">
         <div class="table-meta"><span id="phase-label">01 / 准备</span><span>ONE CARD, ONE MOMENT</span></div>
@@ -22,20 +26,29 @@
         <div class="stage-controls"><button class="arrow" id="previous" aria-label="选择上一张牌" disabled>←</button><span id="selection-label">等待开始</span><button class="arrow" id="next" aria-label="选择下一张牌" disabled>→</button></div>
         <button class="primary" id="main-action"><span id="main-label">开始抽卡</span><kbd id="main-key">1</kbd></button>
         <p class="stage-message" id="stage-message" role="status" aria-live="polite">鼠标、电脑键盘或 EasyInput，任选一种开始。</p>
+        <p class="greeting-status" id="greeting-status" role="status" aria-live="polite">首次按 S1、数字键 1 或点击开始时，会由这次操作播放一次启动语。</p>
       </div>
       <aside class="reading" aria-label="本次解读"><div class="reading-label"><span>YOUR READING</span><span id="result-tag">待揭晓</span></div><div id="reading-content"><div class="empty-mark" aria-hidden="true">✧</div><h2>答案，慢一点出现。</h2><p>这里将留下你抽到的牌，<br>和一段供你思考的文字。</p><div class="reading-note">这一次只抽一张。<br>确认之后，牌面与解读会固定下来。</div></div><button id="new-round" class="quiet new-round" hidden>结束本次，重新抽牌 ↗</button><p class="sample-note">示例牌组 · 固定解读<br>用于娱乐与自我反思</p></aside>
     </section>
-    <section class="control-strip" aria-label="操作提示"><div><span class="step-num">01</span><p><strong>开始</strong><span><kbd>1</kbd> 或 S1</span></p></div><div><span class="step-num">02</span><p><strong>选择牌背</strong><span><kbd>←</kbd> <kbd>→</kbd> 或旋转旋钮</span></p></div><div><span class="step-num">03</span><p><strong>确认翻牌</strong><span><kbd>Enter</kbd> 或短按旋钮</span></p></div></section>
+    <section class="control-strip" aria-label="操作提示"><div><span class="step-num">01</span><p><strong>开始</strong><span><kbd>1</kbd> 或 S1</span></p></div><div><span class="step-num">02</span><p><strong>提出问题</strong><span><kbd>3</kbd> 或 S3</span></p></div><div><span class="step-num">03</span><p><strong>选择牌背</strong><span><kbd>←</kbd> <kbd>→</kbd> 或旋转旋钮</span></p></div><div><span class="step-num">04</span><p><strong>确认翻牌</strong><span><kbd>Enter</kbd> 或短按旋钮</span></p></div></section>
     <section id="input-panel" class="input-panel" hidden aria-labelledby="input-title">
       <div class="input-header"><div><p class="eyebrow">INPUT CHECK</p><h2 id="input-title">看看网页收到了什么</h2></div><label class="test-toggle"><input type="checkbox" id="test-only"> 仅测试输入，不操作牌组</label></div>
-      <p>勾选“仅测试输入”后可直接逐个短按。数字键 1–8、左右方向键和回车会在下方亮起。网页无法区分电脑键盘与开发板。</p>
+      <p>勾选“仅测试输入”后可直接逐个短按。数字键 1–8、左右方向键和回车会在下方亮起。数字键 3 会进入语音提问；网页无法区分电脑键盘与开发板。</p>
       <div id="key-monitor" class="key-monitor"></div>
       <div class="input-summary"><span id="focus-status">页面可接收输入</span><span id="input-counts">收到 0 次 · 接受 0 次 · 忽略重复 0 次</span><button id="clear-log" class="quiet">清空记录</button></div>
       <ol id="event-log" class="event-log" aria-label="最近输入记录"><li class="log-empty">还没有输入记录</li></ol>
-      <details><summary>如何配置 EasyInput</summary><ol class="setup-list"><li>先截图保存当前配置。第一轮只需配置 S1 和旋钮。</li><li>点 S1，选择“快捷键”→“点击录入按键”，再按电脑键盘的 <strong>1</strong>。不要选“固定文字”。</li><li>点旋钮，把“旋转模式”改为“移动光标”，再把“光标方向”选为“左右”。切换模式后方向可能回到“上下”，请重新选一次“左右”。</li><li>在“按压操作”中选择“快捷键”→“点击录入按键”，再按电脑键盘的 <strong>Enter</strong>。回车藏在快捷键录入里，不是下拉菜单的独立选项。</li><li>点击“同步到键盘”，等状态显示“已同步”。开启上方“仅测试输入”，依次按 S1、左右各转一格、短按旋钮；应分别只增加 1 次。</li></ol><p>沿用当前固件，不需要 BOOT 或烧录。切换到其他应用后，本页不接收键盘操作。</p><a href="https://waytoagi.feishu.cn/wiki/A64iwQCt5i0T1wkjHqGcMd6OnZf" target="_blank" rel="noreferrer">查看第 6 课配置依据 ↗</a></details>
+      <details><summary>当前 EasyInput 配置边界</summary><ol class="setup-list"><li>沿用 V0.1 已同步的 S1、旋钮与短按配置，不修改固件或键位。</li><li>网页同时接受 <strong>3</strong> 和 S3 发出的同名键盘事件；如果当前 S3 没有配置为数字键 3，请先用电脑键盘验收本课功能。</li><li>开启上方“仅测试输入”，可以检查每次按压是否只被接受一次，不会启动语音或推进牌组。</li></ol><p>本课不操作 EasyInput App，不需要 BOOT、烧录或复位。切换到其他应用后，本页不接收键盘操作。</p></details>
     </section>
   </main>
-  <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>原型 V0.1</span></footer>
-  <dialog id="reset-dialog"><h2>开始新的一次？</h2><p>当前牌面和解读将被清除。新的一次会重新洗牌。</p><div><button id="cancel-reset" class="quiet">保留本次</button><button id="confirm-reset" class="primary">重新开始</button></div></dialog>
+  <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>第 3 课 · V0.2</span></footer>
+  <dialog id="question-dialog" aria-labelledby="question-title">
+    <div class="question-dialog-heading"><div><p class="eyebrow">VOICE QUESTION</p><h2 id="question-title">这次，你想问什么？</h2></div><span class="question-state" data-state="idle">待机</span></div>
+    <p id="question-status-message" role="status" aria-live="polite">准备启动语音识别；文字输入始终可用。</p>
+    <label for="question-draft">识别文字 / 备用输入</label>
+    <textarea id="question-draft" maxlength="280" rows="5" placeholder="例如：我该如何面对眼前的变化？"></textarea>
+    <p class="question-privacy">语音识别能力由当前浏览器提供。麦克风不可用或权限被拒绝时，仍可直接输入；只有点击“确认问题”后才会保存。</p>
+    <div class="question-dialog-actions"><button id="cancel-question" class="quiet">取消</button><button id="retry-listening" class="quiet">重新聆听</button><button id="stop-listening" class="quiet">停止</button><button id="confirm-question" class="primary" disabled>确认问题</button></div>
+  </dialog>
+  <dialog id="reset-dialog"><h2>开始新的一次？</h2><p>当前问题、牌面和解读将被清除。新的一次会重新洗牌。</p><div><button id="cancel-reset" class="quiet">保留本次</button><button id="confirm-reset" class="primary">重新开始</button></div></dialog>
 </body>
 </html>
