@@ -48,7 +48,7 @@
 
 ## 板级边界
 
-采用已读取的 easyinput-board-cy 板级资料：EasyInput V2.0 / v2 / AI Keyboard V2.1 指向同一基线。8 键及编码器为物理资源；产品动作属于本项目。网页只处理系统键盘事件，不直接接触 GPIO、共享外设电源、BOOT、Flash 分区或固件。本轮没有烧录或修改 EasyInput App 配置。
+采用已读取的 easyinput-board-cy 板级资料：EasyInput V2.0 / v2 / AI Keyboard V2.1 指向同一基线。8 键及编码器为物理资源；产品动作属于本项目。网页只处理系统键盘事件，不直接接触 GPIO、共享外设电源、BOOT、Flash 分区或固件。本轮没有烧录；已通过 EasyInput App 同步 S1 与旋钮的键盘事件配置。
 
 ## 源码
 
