@@ -58,7 +58,8 @@ function updateLog(){
   $('event-log').replaceChildren(...nodes);
 }
 document.addEventListener('keydown',event=>{
-  if($('reset-dialog').open||event.target.closest('input,textarea,select,[contenteditable="true"],summary'))return;
+  const interactive=event.target.closest('input,textarea,select,[contenteditable="true"],summary');
+  if($('reset-dialog').open||(interactive&&interactive.id!=='test-only'))return;
   const input=keyInput(event,held);if(!input)return;
   event.preventDefault();received++;
   let outcome;

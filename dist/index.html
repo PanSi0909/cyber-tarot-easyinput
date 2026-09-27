@@ -28,11 +28,11 @@
     <section class="control-strip" aria-label="操作提示"><div><span class="step-num">01</span><p><strong>开始</strong><span><kbd>1</kbd> 或 S1</span></p></div><div><span class="step-num">02</span><p><strong>选择牌背</strong><span><kbd>←</kbd> <kbd>→</kbd> 或旋转旋钮</span></p></div><div><span class="step-num">03</span><p><strong>确认翻牌</strong><span><kbd>Enter</kbd> 或短按旋钮</span></p></div></section>
     <section id="input-panel" class="input-panel" hidden aria-labelledby="input-title">
       <div class="input-header"><div><p class="eyebrow">INPUT CHECK</p><h2 id="input-title">看看网页收到了什么</h2></div><label class="test-toggle"><input type="checkbox" id="test-only"> 仅测试输入，不操作牌组</label></div>
-      <p>先点击页面空白处，再逐个短按。数字键 1–8、左右方向键和回车会在下方亮起。网页无法区分电脑键盘与开发板。</p>
+      <p>勾选“仅测试输入”后可直接逐个短按。数字键 1–8、左右方向键和回车会在下方亮起。网页无法区分电脑键盘与开发板。</p>
       <div id="key-monitor" class="key-monitor"></div>
       <div class="input-summary"><span id="focus-status">页面可接收输入</span><span id="input-counts">收到 0 次 · 接受 0 次 · 忽略重复 0 次</span><button id="clear-log" class="quiet">清空记录</button></div>
       <ol id="event-log" class="event-log" aria-label="最近输入记录"><li class="log-empty">还没有输入记录</li></ol>
-      <details><summary>如何配置 EasyInput</summary><ol class="setup-list"><li>先截图保存当前按键和旋钮配置。第一轮只需配置 S1 和旋钮。</li><li>S1 设为发送普通数字键 <strong>1</strong>；旋钮逆时针设为左方向键，顺时针设为右方向键，短按设为回车。</li><li>保存并同步，等待 App 明确确认成功。不要用“固定文字”或“滚动页面”代替普通键盘动作。</li><li>如需验证全部八键，可临时把 S1–S8 设为数字 1–8，并开启“仅测试输入”；测试完恢复未使用的键位。</li><li>慢转右侧 10 格、再左侧 10 格。逐次检查是否各收到一个有效输入。浏览器不会替固件修正方向或每格多发。</li></ol><p>沿用当前固件，不需要 BOOT 或烧录。切换到其他应用后，本页不接收键盘操作。</p><a href="https://waytoagi.feishu.cn/wiki/A64iwQCt5i0T1wkjHqGcMd6OnZf" target="_blank" rel="noreferrer">查看第 6 课配置依据 ↗</a></details>
+      <details><summary>如何配置 EasyInput</summary><ol class="setup-list"><li>先截图保存当前配置。第一轮只需配置 S1 和旋钮。</li><li>点 S1，选择“快捷键”→“点击录入按键”，再按电脑键盘的 <strong>1</strong>。不要选“固定文字”。</li><li>点旋钮，把“旋转模式”改为“移动光标”，再把“光标方向”选为“左右”。切换模式后方向可能回到“上下”，请重新选一次“左右”。</li><li>在“按压操作”中选择“快捷键”→“点击录入按键”，再按电脑键盘的 <strong>Enter</strong>。回车藏在快捷键录入里，不是下拉菜单的独立选项。</li><li>点击“同步到键盘”，等状态显示“已同步”。开启上方“仅测试输入”，依次按 S1、左右各转一格、短按旋钮；应分别只增加 1 次。</li></ol><p>沿用当前固件，不需要 BOOT 或烧录。切换到其他应用后，本页不接收键盘操作。</p><a href="https://waytoagi.feishu.cn/wiki/A64iwQCt5i0T1wkjHqGcMd6OnZf" target="_blank" rel="noreferrer">查看第 6 课配置依据 ↗</a></details>
     </section>
   </main>
   <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>原型 V0.1</span></footer>
