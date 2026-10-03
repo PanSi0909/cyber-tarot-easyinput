@@ -1,0 +1,85 @@
+export const tarotKnowledgeVersion='rws-zh-v1';
+
+const majors={
+  'major-fool':['启程者','相信可能性，带着好奇迈出尚未被证明的一步。','自由可能滑向冒进，也可能是害怕开始而迟迟停在门口。','保留轻盈，但先确认边界与基本风险。'],
+  'major-magician':['创造者','资源已经在手，关键是集中意志并把想法变成动作。','能力分散、表达失真，或试图用技巧掩盖准备不足。','列出可用资源，并完成一个能被看见的成果。'],
+  'major-high-priestess':['守门人','答案尚未完全显形，直觉与沉默中的信息值得被听见。','忽略内在感受、过度猜测，或把模糊误认成神秘启示。','先观察再命名，不必立刻公开所有判断。'],
+  'major-empress':['滋养者','让关系、创意或资源得到照料，丰盛来自持续孕育。','过度付出、依赖认可，或照顾别人时遗忘自己的需要。','把时间给真正需要生长的事，也为自己保留养分。'],
+  'major-emperor':['建构者','清晰结构、责任与边界能把混乱变成可执行秩序。','控制过强、僵化，或缺乏规则导致力量无法落地。','确定谁负责什么，并建立一条可遵守的边界。'],
+  'major-hierophant':['传承者','经验、传统与可靠方法可以提供支架和共同语言。','盲从权威，或为了反叛而拒绝一切成熟经验。','分辨哪些规则仍有价值，哪些需要有理由地更新。'],
+  'major-lovers':['选择者','真正的联结来自价值一致，以及愿意为选择承担后果。','迎合、摇摆或关系中的投射让选择失去诚实。','先说清自己的核心价值，再谈靠近或取舍。'],
+  'major-chariot':['驾驭者','方向明确时，冲突的力量也能被整合成推进力。','急于取胜、失控，或目标不清却仍在消耗意志。','选定一个方向，缩小战线，用节奏而非蛮力前进。'],
+  'major-strength':['驯狮者','温柔而坚定的自持，比压制更能转化本能与恐惧。','自我怀疑、情绪压抑，或用强硬掩盖脆弱。','承认真实感受，再选择不伤害自己的回应方式。'],
+  'major-hermit':['寻灯者','暂时退开噪音，独处能帮助你辨认真正重要的答案。','孤立、过度分析，或把退缩包装成深思熟虑。','给自己一段有期限的安静，然后带着结论返回现实。'],
+  'major-wheel':['转轮者','周期正在转换，顺势调整比执着控制每个变量更有效。','重复旧循环、抗拒变化，或把责任全部交给运气。','识别你不能控制的变化，同时抓住仍可选择的部分。'],
+  'major-justice':['衡量者','事实、因果与公平需要被正面看见，决定要经得起复盘。','偏见、自我辩护，或只追求形式正确而忽略真实影响。','把证据与感受分开记录，再作可承担后果的决定。'],
+  'major-hanged-man':['悬停者','暂停不是失败；换一个视角可能比继续用力更接近答案。','无意义牺牲、拖延，或明知要放下却坚持旧解释。','停止一次惯性动作，观察失去它后出现的新视角。'],
+  'major-death':['蜕变者','某个阶段已经完成，真正的新生需要为结束腾出空间。','抗拒告别、拖延转型，或因害怕失去而维持空壳。','明确结束什么，并用一个仪式或行动完成交接。'],
+  'major-temperance':['调和者','不同需求可以通过节奏、比例与耐心被重新调和。','失衡、极端或急于求成，使原本能协作的部分彼此冲突。','降低强度，测试一个可持续的中间方案。'],
+  'major-devil':['照影者','欲望与依附被照亮；看见锁链，才知道哪里仍有选择。','否认依赖、羞耻循环，或误以为自己完全没有退路。','准确命名代价，并找出最小的可退出动作。'],
+  'major-tower':['破局者','不稳固的结构正在显露裂缝，真相会迫使系统重建。','预警被压下、害怕崩塌，或在震荡后仍试图恢复旧假象。','先保安全与核心资源，再决定哪些部分值得重建。'],
+  'major-star':['引路者','经历消耗之后，希望以更安静、更真实的方式回来。','失去信任、理想透支，或只想被疗愈却不愿参与恢复。','选择一个能持续滋养你的微小习惯。'],
+  'major-moon':['夜行者','信息仍在雾中，梦、直觉与不安都在提示尚未看清的部分。','焦虑放大、误读信号，或被想象牵引而脱离事实。','延后定论，核实信息，并记录情绪触发点。'],
+  'major-sun':['照明者','清晰、活力与坦率让事情进入可见、可分享的阶段。','过度乐观、需要掌声，或光太强而忽略复杂性。','庆祝真实进展，同时检查被好消息遮住的细节。'],
+  'major-judgement':['回应者','过去经验正在汇成召唤，诚实复盘能带来新的定位。','自责、拒绝回应，或反复审判自己而没有实际修正。','区分责任与羞耻，做一个能证明改变的决定。'],
+  'major-world':['完成者','各部分正在整合，阶段性完成值得确认与收束。','临门停滞、害怕结束，或尚有一处未完成的闭环。','确认成果、补上最后一环，再决定下一段旅程。']
+};
+
+const suits={
+  wands:{name:'权杖',element:'火',domain:'行动、欲望与创造力',gift:'主动点燃改变',shadow:'急躁、耗竭或只凭热情',practice:'把能量放进一个明确动作'},
+  cups:{name:'圣杯',element:'水',domain:'情感、关系与直觉',gift:'感受并建立真实联结',shadow:'情绪淹没、投射或逃避边界',practice:'说清感受，同时核对事实'},
+  swords:{name:'宝剑',element:'风',domain:'思维、沟通与决断',gift:'切开混乱，看见核心事实',shadow:'过度分析、语言伤害或焦虑循环',practice:'把事实、解释与担忧分开'},
+  pentacles:{name:'星币',element:'土',domain:'资源、身体与现实建设',gift:'让价值经由时间沉淀为成果',shadow:'匮乏感、僵化或只看短期得失',practice:'检查资源并安排可持续步骤'}
+};
+
+const ranks={
+  ace:['种子','机会刚出现，潜力需要被接住。','起点被忽略、能量尚未找到出口。','你愿意先为它创造什么条件？'],
+  two:['权衡','两股力量要求协调并作出初步选择。','摇摆、失衡，或为了维持和平而不作决定。','真正需要权衡的两件事是什么？'],
+  three:['展开','最初投入开始向外延伸，并需要协作或反馈。','发展受阻、配合失调，或目标尚未对齐。','谁或什么能让它走得更远？'],
+  four:['稳定','结构暂时成形，安全感与边界成为重点。','稳定变成停滞，或基础还不足以承重。','哪些部分要守住，哪些可以松动？'],
+  five:['摩擦','差异与压力显形，暴露了原有结构的薄弱处。','冲突被内化、回避，或代价仍未被承认。','这场摩擦真正揭示了什么？'],
+  six:['调整','经历张力后，局面出现修复、过渡或重新分配。','旧问题回流、认可不足，或过渡仍未完成。','怎样才算真正向前，而非暂时好转？'],
+  seven:['检验','选择增多，立场与耐力正在接受测试。','防线松动、判断混乱，或投入与回报失衡。','什么值得继续坚持？'],
+  eight:['推进','能量进入执行期，重复练习或快速变化带来进展。','节奏失控、延误，或忙碌没有形成有效积累。','哪个环节最需要调整节奏？'],
+  nine:['成熟','经验累积到临界点，成果与最后一道防线同时出现。','疲惫、封闭，或接近完成时开始自我怀疑。','你需要坚持，还是需要允许自己休息？'],
+  ten:['完成','一个周期达到饱和，成果与责任需要一起结算。','负担过重、闭环延迟，或旧周期占满新空间。','什么该交付、分享或结束？'],
+  page:['信使','以初学者姿态接收信息，新的兴趣正在试探边界。','消息失真、准备不足，或好奇心没有持续投入。','你需要先学会什么？'],
+  knight:['行动者','主题被加速推进，意图需要通过行动接受检验。','冲动、方向偏离，或承诺快于实际能力。','怎样行动既有勇气又不失准度？'],
+  queen:['内在掌握','力量已经内化，成熟表现为承接、理解与稳定影响。','照顾过度、边界模糊，或对自身能力缺乏信任。','你怎样先稳住自己，再影响局面？'],
+  king:['外在掌握','经验需要转化为决策、责任与对现实的管理。','权威僵化、控制过度，或有位置却没有担当。','什么决定最能体现成熟与负责？']
+};
+
+const positionLenses={
+  'one-card':{核心:'把它当作当前问题最值得凝视的核心能量，而不是孤立的吉凶结论。'},
+  'time-flow':{过去:'它说明已经形成的背景、惯性或遗留影响。',现在:'它描述此刻最活跃的状态与可用选择。',未来:'它呈现沿当前轨迹可能发展的方向，不是不可更改的预言。'},
+  choice:{现状:'它是两条路径共同出发的现实基线。','路径 A':'它描述选择 A 需要投入的方式与经验。','路径 A 结果':'它呈现 A 按当前条件发展的倾向与代价。','路径 B':'它描述选择 B 需要投入的方式与经验。','路径 B 结果':'它呈现 B 按当前条件发展的倾向与代价。'},
+  'celtic-cross':{现状:'它是问题当下最直接的能量。',挑战:'它横切现状，既可能是阻力，也可能是必须整合的功课。',根基:'它指向深层动机、旧模式或尚未说出口的基础。',过去:'它说明正在退场但仍有影响的经历。',可能:'它呈现意识层面的期待，以及当前能够触及的上限。',未来:'它显示近期轨迹与下一阶段的环境。',自我:'它反映你如何理解自己及可采取的姿态。',环境:'它显示他人、关系或外部条件带来的作用。','希望与恐惧':'它把渴望与担忧放在同一面镜子里。',结果:'它总结当前选择延续下去的可能落点。'}
+};
+
+export function getPositionLens(spreadId,position){return positionLenses[spreadId]?.[position]||'它需要结合牌阵位置与现实问题来理解。';}
+
+export function getCardKnowledge(card){
+  const major=majors[card?.id];
+  if(major)return {archetype:major[0],element:'灵',domain:'人生阶段与核心课题',upright:major[1],reversed:major[2],counsel:major[3],reflection:`${major[0]}正在邀请你承认哪一个事实？`};
+  const [suitId,rankId]=String(card?.id||'').split('-'),suit=suits[suitId],rank=ranks[rankId];
+  if(!suit||!rank)throw new Error(`缺少卡牌知识：${card?.id||'unknown'}`);
+  const keyword=String(card.keywords||'').split(' · ')[0];
+  return {archetype:`${suit.name}的${rank[0]}`,element:suit.element,domain:suit.domain,upright:`${rank[1]}在${suit.domain}中，“${keyword}”会通过${suit.gift}逐渐变得具体。`,reversed:`${rank[2]}在${suit.domain}中，“${keyword}”可能暂时难以展开，需要留意${suit.shadow}。`,counsel:`${suit.practice}；${rank[3]}`,reflection:rank[3]};
+}
+
+export function interpretCard(card,orientation='upright',position='核心',spreadId='one-card'){
+  const knowledge=getCardKnowledge(card),meaning=orientation==='reversed'?knowledge.reversed:knowledge.upright;
+  return {...knowledge,meaning,text:`${getPositionLens(spreadId,position)} ${meaning} 建议：${knowledge.counsel}`,reflection:knowledge.reflection};
+}
+
+export function analyzeReadingPatterns(input){
+  const suitCounts={wands:0,cups:0,swords:0,pentacles:0},rankCounts={},majorsInSpread=[];
+  let reversedCount=0;
+  for(const card of input.cards){
+    if(card.orientation==='reversed')reversedCount++;
+    if(card.id.startsWith('major-'))majorsInSpread.push(card.name);
+    else{const [suit,rank]=card.id.split('-');suitCounts[suit]++;rankCounts[rank]=(rankCounts[rank]||0)+1;}
+  }
+  const ordered=Object.entries(suitCounts).sort((a,b)=>b[1]-a[1]),dominantSuit=ordered[0][1]&&ordered[0][1]>ordered[1][1]?ordered[0][0]:null;
+  return {majorCount:majorsInSpread.length,majors:majorsInSpread,reversedCount,uprightCount:input.cards.length-reversedCount,dominantSuit,dominantDomain:dominantSuit?suits[dominantSuit].domain:null,repeatedRanks:Object.entries(rankCounts).filter(([,count])=>count>1).map(([rank])=>ranks[rank][0])};
+}

@@ -23,8 +23,15 @@ export const spreads=[
   {id:'choice',count:5,name:'命运抉择',en:'CHOICE',description:'比较两条路径、代价，以及各自可能带来的结果。'},
   {id:'celtic-cross',count:10,name:'凯尔特十字',en:'CELTIC',description:'完整展开处境、阻碍、潜意识、外部影响与趋势。'}
 ];
+export const spreadPositions={
+  'one-card':['核心'],
+  'time-flow':['过去','现在','未来'],
+  choice:['现状','路径 A','路径 A 结果','路径 B','路径 B 结果'],
+  'celtic-cross':['现状','挑战','根基','过去','可能','未来','自我','环境','希望与恐惧','结果']
+};
 export function fixedTextAction(value){
   const normalized=typeof value==='string'?value.replaceAll(/\s/g,''):'';
+  if(normalized.endsWith('综合解读'))return 'reading';
   if(normalized.endsWith('牌阵选择')||normalized.endsWith('牌组选择'))return 'setup';
   return normalized.endsWith('开始')?'start':null;
 }
@@ -35,8 +42,10 @@ export function recognitionFailureMessage(error){return ({
   'no-speech':'没有识别到语音，请重试或改用文字输入。',
   network:'语音识别服务暂时不可用，请改用文字输入。'
 })[error]||'语音识别失败，请改用文字输入。';}
-export const fresh = () => ({phase:'idle',deck:[],selected:0,result:null,results:[],picked:[],question:null,deckChoice:null,spreadChoice:null,spreadIndex:0});
+export const fresh = () => ({phase:'idle',deck:[],orientations:[],selected:0,result:null,results:[],picked:[],question:null,deckChoice:null,spreadChoice:null,spreadIndex:0});
 export function shuffled(random=Math.random){const deck=cards.map(c=>c.id);for(let i=deck.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}return deck;}
+function preparedDeck(random=Math.random){const deck=shuffled(random),orientations=deck.map(()=>random()<0.35?'reversed':'upright');return {deck,orientations};}
+export function cardOrientation(state,cardId){const index=state.deck.indexOf(cardId);return state.orientations[index]==='reversed'?'reversed':'upright';}
 function spreadFor(state){return spreads.find(spread=>spread.id===state.spreadChoice);}
 function nextAvailable(state,direction){
   let selected=state.selected;
@@ -60,15 +69,15 @@ export function transition(state,action,random=Math.random){
     if(action==='left'||action==='right')return {...state,spreadIndex:(state.spreadIndex+(action==='left'?-1:1)+spreads.length)%spreads.length};
     if(Number.isInteger(action)&&action>=0&&action<spreads.length)return {...state,spreadIndex:action};
     if(action==='confirm'){
-      const spread=spreads[state.spreadIndex];
-      return {...state,phase:'selecting',deck:shuffled(random),selected:0,result:null,results:[],picked:[],deckChoice:currentDeckChoice,spreadChoice:spread.id};
+      const spread=spreads[state.spreadIndex],prepared=preparedDeck(random);
+      return {...state,phase:'selecting',...prepared,selected:0,result:null,results:[],picked:[],deckChoice:currentDeckChoice,spreadChoice:spread.id};
     }
     return state;
   }
   if(action?.type==='set-setup'&&(state.phase==='configuring'||state.phase==='spread-selecting')){
     const spreadIndex=spreads.findIndex(spread=>spread.id===action.spread);
     if(action.deck!==currentDeckChoice||spreadIndex<0)return state;
-    return {...state,phase:'selecting',deck:shuffled(random),selected:0,result:null,results:[],picked:[],deckChoice:action.deck,spreadChoice:action.spread,spreadIndex};
+    return {...state,phase:'selecting',...preparedDeck(random),selected:0,result:null,results:[],picked:[],deckChoice:action.deck,spreadChoice:action.spread,spreadIndex};
   }
   if(state.phase!=='selecting') return state;
   if(action==='left'||action==='right') return {...state,selected:nextAvailable(state,action==='left'?-1:1)};
@@ -92,14 +101,17 @@ export function restore(raw){try{
   if(Array.isArray(s.deck)&&s.deck.length===5&&new Set(s.deck).size===5&&s.deck.every(id=>legacyCardIds[id])){
     if(!['selecting','revealed'].includes(s.phase)||!Number.isInteger(s.selected)||s.selected<0||s.selected>=s.deck.length)return base;
     const legacyDeck=s.deck.map(id=>legacyCardIds[id]),deck=[...legacyDeck,...cards.map(card=>card.id).filter(id=>!legacyDeck.includes(id))];
-    if(s.phase==='selecting')return {...base,phase:'selecting',deck,selected:s.selected,question,deckChoice:currentDeckChoice,spreadChoice:currentSpreadChoice};
+    const orientations=deck.map(()=>'upright');
+    if(s.phase==='selecting')return {...base,phase:'selecting',deck,orientations,selected:s.selected,question,deckChoice:currentDeckChoice,spreadChoice:currentSpreadChoice};
     const result=legacyCardIds[s.result];
     if(!result||result!==deck[s.selected])return base;
-    return {...base,phase:'revealed',deck,selected:s.selected,result,results:[result],picked:[result],question,deckChoice:currentDeckChoice,spreadChoice:currentSpreadChoice};
+    return {...base,phase:'revealed',deck,orientations,selected:s.selected,result,results:[result],picked:[result],question,deckChoice:currentDeckChoice,spreadChoice:currentSpreadChoice};
   }
   if(!['selecting','revealed'].includes(s.phase)||!Array.isArray(s.deck)||s.deck.length!==cards.length||new Set(s.deck).size!==cards.length||s.deck.some(id=>!cards.some(c=>c.id===id))||!Number.isInteger(s.selected)||s.selected<0||s.selected>=cards.length)return base;
   const deckChoice=s.deckChoice??currentDeckChoice,spreadChoice=s.spreadChoice??currentSpreadChoice,spreadIndex=spreads.findIndex(spread=>spread.id===spreadChoice);
   if(deckChoice!==currentDeckChoice||spreadIndex<0)return base;
+  const orientations=s.orientations==null?s.deck.map(()=>'upright'):s.orientations;
+  if(!Array.isArray(orientations)||orientations.length!==s.deck.length||orientations.some(value=>!['upright','reversed'].includes(value)))return base;
   const legacyResult=s.phase==='revealed'&&typeof s.result==='string'?[s.result]:[];
   const picked=Array.isArray(s.picked)?s.picked:Array.isArray(s.results)?s.results:legacyResult;
   if(new Set(picked).size!==picked.length||picked.some(id=>!s.deck.includes(id)))return base;
@@ -107,7 +119,7 @@ export function restore(raw){try{
   if(picked.length>(s.phase==='revealed'?spread.count:spread.count-1)||s.phase==='revealed'&&picked.length!==spread.count)return base;
   if(s.phase==='revealed'&&s.result!=null&&s.result!==picked[0])return base;
   const results=s.phase==='revealed'?[...picked]:[];
-  return {...base,phase:s.phase,deck:[...s.deck],selected:s.selected,result:results[0]??null,results,picked:[...picked],question,deckChoice,spreadChoice,spreadIndex};
+  return {...base,phase:s.phase,deck:[...s.deck],orientations:[...orientations],selected:s.selected,result:results[0]??null,results,picked:[...picked],question,deckChoice,spreadChoice,spreadIndex};
 }catch{return fresh();}}
 export function keyInput(event,held){
   const code=event.code;
@@ -115,6 +127,6 @@ export function keyInput(event,held){
   if(!monitored||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey)return null;
   if(event.repeat||held.has(code))return {code,duplicate:true};
   held.add(code);
-  const action=code==='Digit1'||code==='Numpad1'?'start':code==='Digit2'||code==='Numpad2'?'setup':code==='Digit3'||code==='Numpad3'?'question':code==='ArrowLeft'?'left':code==='ArrowRight'?'right':code==='Enter'||code==='NumpadEnter'?'confirm':null;
+  const action=code==='Digit1'||code==='Numpad1'?'start':code==='Digit2'||code==='Numpad2'?'setup':code==='Digit3'||code==='Numpad3'?'question':code==='Digit4'||code==='Numpad4'?'reading':code==='ArrowLeft'?'left':code==='ArrowRight'?'right':code==='Enter'||code==='NumpadEnter'?'confirm':null;
   return {code,duplicate:false,action};
 }
