@@ -111,7 +111,7 @@ function currentReadingInput(){return buildReadingInput(state);}
 function saveReadingSession(){try{sessionStorage.setItem(readingStorageKey,JSON.stringify(readingSession));}catch{storageAvailable=false;}}
 function clearReadingSession(){readingSession=null;readingStatus='idle';readingError='';try{sessionStorage.removeItem(readingStorageKey);}catch{storageAvailable=false;}}
 function loadReadingSession(){
-  if(state.phase!=='revealed')return;try{readingSession=restoreReadingSession(sessionStorage.getItem(readingStorageKey),currentReadingInput());}catch{readingSession=null;}
+  if(state.phase!=='revealed')return;try{readingSession=restoreReadingSession(sessionStorage.getItem(readingStorageKey),currentReadingInput());readingMode=Boolean(readingSession);}catch{readingSession=null;readingMode=false;}
 }
 function scrollReadingIntoView(target=$('ai-reading-heading')){
   const behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
@@ -214,7 +214,7 @@ function receiveFixedText(value){
 }
 $('command-input').addEventListener('input',()=>{
   const value=$('command-input').value;if(receiveFixedText(value))return;
-  if(state.phase==='revealed'&&readingSession&&readingMode&&value){$('follow-up').value=($('follow-up').value+value).slice(0,maxQuestionLength);$('command-input').value='';$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';}
+  if(state.phase==='revealed'&&readingSession&&value){readingMode=true;$('follow-up').value=($('follow-up').value+value).slice(0,maxQuestionLength);$('command-input').value='';$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';}
 });
 document.addEventListener('paste',event=>{
   if(!acceptsHardwareCommand()||event.target===$('question-draft'))return;
