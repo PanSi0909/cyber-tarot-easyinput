@@ -69,7 +69,7 @@ function questionContext(question){
     {pattern:/钱|收入|支出|投资|理财|财务|买|卖/i,name:'财务',focus:'资源、安全边界、风险与长期承受力',check:'先核对数字、时间成本与最坏情况下的承受范围'},
     {pattern:/学习|考试|成长|方向|选择|未来|规划/i,name:'成长',focus:'动机、能力积累、路径选择与反馈',check:'用一次小规模行动检验方向，而不是只凭想象决定'}
   ];
-  return contexts.find(item=>item.pattern.test(question))||{name:'当前问题',focus:'事实、感受、选择与可能后果',check:'把已经发生的事实和仍在推测的部分分开'};
+  return contexts.find(item=>item.pattern.test(question))||{name:'当前',focus:'事实、感受、选择与可能后果',check:'把已经发生的事实和仍在推测的部分分开'};
 }
 
 function interpretMockCard(card,context){
