@@ -14,7 +14,7 @@ try{greetingPlayed=sessionStorage.getItem(greetingKey)==='1';}catch{}
 
 function acceptsHardwareCommand(){return ['idle','configuring','revealed'].includes(state.phase);}
 function userIsEditing(){const active=document.activeElement;return active&&active!==$('command-input')&&active.matches('input,textarea,select,[contenteditable="true"]');}
-function commandFocus(){if(acceptsHardwareCommand()&&document.hasFocus()&&!userIsEditing())$('command-input').focus({preventScroll:true});}
+function commandFocus(){if(!document.hasFocus()||userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
 function saveState(){try{sessionStorage.setItem(storageKey,JSON.stringify(state));}catch{storageAvailable=false;}}
 function currentSpread(){return spreads.find(spread=>spread.id===state.spreadChoice);}
 function updateQuestionControls(){
@@ -212,10 +212,17 @@ function receiveFixedText(value){
   const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
   logs.unshift(`${new Date().toLocaleTimeString('zh-CN',{hour12:false})}  S${meta[0]}“${meta[1]}”  → ${outcome}`);logs=logs.slice(0,20);updateLog();return true;
 }
-$('command-input').addEventListener('input',()=>{
-  const value=$('command-input').value;if(receiveFixedText(value))return;
-  if(state.phase==='revealed'&&readingSession&&value){readingMode=true;$('follow-up').value=($('follow-up').value+value).slice(0,maxQuestionLength);$('command-input').value='';$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';}
-});
+function routeCommandInput(){
+  const value=$('command-input').value;if(!value)return false;if(receiveFixedText(value))return true;
+  if(state.phase!=='revealed'||!readingSession)return false;
+  readingMode=true;$('follow-up').value=($('follow-up').value+value).slice(0,maxQuestionLength);$('command-input').value='';$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';return true;
+}
+$('command-input').addEventListener('input',routeCommandInput);
+let observedCommandValue='',observedFollowUpValue='';
+setInterval(()=>{
+  const commandValue=$('command-input').value;if(commandValue&&commandValue===observedCommandValue)routeCommandInput();observedCommandValue=$('command-input').value;
+  const followUpValue=$('follow-up').value;if(state.phase==='revealed'&&readingSession&&followUpValue&&followUpValue!==observedFollowUpValue){readingMode=true;$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';}observedFollowUpValue=followUpValue;
+},120);
 document.addEventListener('paste',event=>{
   if(!acceptsHardwareCommand()||event.target===$('question-draft'))return;
   const text=event.clipboardData?.getData('text/plain')||'';if(receiveFixedText(text))event.preventDefault();
