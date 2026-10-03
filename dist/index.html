@@ -7,8 +7,8 @@
   <meta name="description" content="用实体按键、旋钮和语音问题完成牌阵，并生成可追问的结构化 AI 解读。">
   <title>赛博塔罗 · Between Signals</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a1018'/%3E%3Cpath d='M16 4 20 12 28 16 20 20 16 28 12 20 4 16 12 12Z' fill='%23b5eadf'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=0.7.0">
-  <script type="module" src="app.mjs?v=0.7.0"></script>
+  <link rel="stylesheet" href="styles.css?v=0.8.0">
+  <script type="module" src="app.mjs?v=0.8.0"></script>
 </head>
 <body>
   <header class="topbar"><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✧</span> 赛博塔罗 <span class="brand-en">BETWEEN SIGNALS</span></a><span class="edition">AI 解读 / 04</span></header>
@@ -41,12 +41,12 @@
         <div><p class="eyebrow">YOUR SPREAD · 已锁定</p><h2 id="result-spread-name">牌阵结果</h2><div id="result-spread" class="result-spread"></div></div>
         <div class="result-copy"><p id="result-position" class="result-category">第 1 张</p><h2 id="result-name">愚者</h2><p id="result-en" class="result-en">THE FOOL</p><p id="result-keywords" class="result-keywords"></p><p id="result-text"></p><div class="reflection"><span>留给自己的问题</span><p id="result-question"></p></div><p class="result-nav">旋转查看每张牌；按 S4“综合解读”进入完整解读。</p><button id="new-round" class="primary">开始新一次 <kbd>开始</kbd></button></div>
         <section class="ai-reading" aria-labelledby="ai-reading-heading">
-          <div class="ai-reading-header"><div><p class="eyebrow">AI SYNTHESIS</p><h2 id="ai-reading-heading">让牌阵成为一段完整叙事</h2></div><span id="provider-badge" class="mock-badge">专业知识模拟接口 · 零模型费用</span></div>
+          <div class="ai-reading-header"><div><p class="eyebrow">AI SYNTHESIS</p><h2 id="ai-reading-heading">让牌阵成为一段完整叙事</h2></div><span id="provider-badge" class="mock-badge">视觉线索模拟接口 · 零模型费用</span></div>
           <p id="ai-reading-status" class="ai-reading-status" role="status" aria-live="polite">已锁定问题、牌阵、位置和正逆位。按 S4 或点击按钮生成，不会重新抽牌。</p>
           <button id="generate-reading" class="primary">生成综合解读</button>
           <div id="ai-output" hidden>
             <h3 id="ai-title"></h3><p id="ai-overview"></p>
-            <div class="ai-reading-grid"><section><h4>逐牌与位置</h4><ol id="ai-card-readings" class="ai-card-readings"></ol></section><section><h4>综合结论</h4><p id="ai-synthesis"></p><h4>行动建议</h4><ul id="ai-guidance"></ul></section></div>
+            <div class="ai-reading-grid"><section><h4>逐牌解读 · 从牌面到问题</h4><ol id="ai-card-readings" class="ai-card-readings"></ol></section><section><h4>完整能量流动</h4><p id="ai-flow"></p><h4>核心矛盾</h4><p id="ai-tension"></p><h4>条件性走向</h4><p id="ai-direction"></p><h4>综合结论</h4><p id="ai-synthesis"></p><h4>行动建议</h4><ul id="ai-guidance"></ul></section></div>
             <section class="voice-version"><p class="eyebrow">VOICE VERSION</p><h4>适合语音复述的简短版本</h4><p id="voice-summary"></p></section>
             <section class="follow-up"><label for="follow-up">基于本次会话继续追问 · S3 语音输入，短按旋钮发送</label><textarea id="follow-up" maxlength="280" rows="2" placeholder="例如：我今天最适合先做哪一步？" disabled></textarea><button id="send-follow-up" class="quiet" disabled>发送追问</button><ol id="follow-up-history" class="follow-up-history"></ol></section>
           </div>
@@ -63,6 +63,6 @@
       <details><summary>当前 EasyInput 配置边界</summary><ol class="setup-list"><li>S1 触发开始，S2 进入牌阵选择，S4 固定文字“综合解读”直达完整解读。</li><li>旋钮选择 1/3/5/10 张牌阵并短按确认；进入综合解读后，旋钮改为上下滚动。</li><li>S3 抽牌前输入原问题，综合解读生成后输入追问；两个阶段互不冲突。</li><li>牌组每轮随机洗牌；页面只呈现当前附近的牌，但旋钮可循环到完整 78 张。</li></ol><p>本项目不会替你操作 EasyInput App，也不需要 BOOT、烧录或复位。</p></details>
     </section>
   </main>
-  <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>第 4 课 · V0.7</span></footer>
+  <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>第 4 课 · V0.8</span></footer>
 </body>
 </html>

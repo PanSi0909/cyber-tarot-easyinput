@@ -1,6 +1,6 @@
 import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=0.7.0';
-import {interpretCard} from './tarot-knowledge.mjs?v=0.7.0';
-import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.7.0';
+import {interpretCard} from './tarot-knowledge.mjs?v=0.8.0';
+import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.8.0';
 const $=id=>document.getElementById(id);
 const storageKey='cyber-tarot.v1',greetingKey='cyber-tarot.greeting.v1',readingStorageKey='cyber-tarot.reading.v1';
 const held=new Set(),hits=new Map(),timers=new Map();
@@ -141,8 +141,8 @@ function renderReading(){
   $('ai-reading-status').textContent=readingStatus==='loading'?`${readingProvider.label}正在读取已锁定的会话…`:readingStatus==='error'?readingError:ready?`首次结果已保存于当前标签页 · ${readingSession.followUps.length} 次追问 · 旋钮上下浏览，S3 发起追问`:'已锁定问题、牌阵、位置和正逆位。按 S4 或点击按钮生成，不会重新抽牌。';
   $('ai-output').hidden=!ready;$('follow-up').disabled=!ready||busy;$('send-follow-up').disabled=!ready||busy;
   if(!ready)return;const reading=readingSession.firstReading;
-  $('ai-title').textContent=reading.title;$('ai-overview').textContent=reading.overview;$('ai-synthesis').textContent=reading.synthesis;$('voice-summary').textContent=reading.voiceSummary;
-  $('ai-card-readings').replaceChildren(...reading.cardReadings.map(item=>{const li=document.createElement('li'),heading=document.createElement('strong'),body=document.createElement('p');heading.textContent=`${item.position} · ${item.card} · ${item.orientation==='reversed'?'逆位':'正位'}`;body.textContent=item.interpretation;li.append(heading,body);return li;}));
+  $('ai-title').textContent=reading.title;$('ai-overview').textContent=reading.overview;$('ai-flow').textContent=reading.flow.movement;$('ai-tension').textContent=reading.flow.tension;$('ai-direction').textContent=reading.flow.direction;$('ai-synthesis').textContent=reading.synthesis;$('voice-summary').textContent=reading.voiceSummary;
+  $('ai-card-readings').replaceChildren(...reading.cardReadings.map(item=>{const li=document.createElement('li'),heading=document.createElement('strong');heading.textContent=`${item.position} · ${item.card} · ${item.orientation==='reversed'?'逆位':'正位'}`;for(const [label,text] of [['牌面线索',item.visualReading],['基础牌义',item.baseMeaning],['结合问题',item.contextualReading]]){const section=document.createElement('div'),title=document.createElement('span'),body=document.createElement('p');section.className='ai-card-section';title.textContent=label;body.textContent=text;section.append(title,body);li.append(section);}li.prepend(heading);return li;}));
   $('ai-guidance').replaceChildren(...reading.guidance.map(item=>{const li=document.createElement('li');li.textContent=item;return li;}));
   $('follow-up-history').replaceChildren(...readingSession.followUps.map((turn,index)=>{const li=document.createElement('li'),question=document.createElement('strong'),answer=document.createElement('p');question.textContent=`追问 ${index+1} · ${turn.question}`;answer.textContent=turn.answer;li.append(question,answer);return li;}));
 }
@@ -262,7 +262,7 @@ window.addEventListener('focus',()=>{focusStatus();requestAnimationFrame(command
 document.addEventListener('visibilitychange',()=>{focusStatus();if(!document.hidden)requestAnimationFrame(commandFocus);});
 document.addEventListener('pointerup',event=>{if(['idle','configuring'].includes(state.phase)&&!event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]'))requestAnimationFrame(commandFocus);});
 $('clear-log').addEventListener('click',()=>{received=accepted=duplicates=0;logs=[];hits.clear();for(const tile of $('key-monitor').children)tile.querySelector('small').textContent='0 次';updateLog();});
-$('provider-badge').textContent=readingProvider===apiReadingProvider?'安全服务端接口 · 密钥仅在服务端':'专业知识模拟接口 · 零模型费用';
+$('provider-badge').textContent=readingProvider===apiReadingProvider?'安全服务端接口 · 密钥仅在服务端':'视觉线索模拟接口 · 零模型费用';
 $('question-draft').value=state.question||'';if(state.phase==='revealed')loadReadingSession();render();focusStatus();
 if(state.phase==='configuring'){setQuestionStatus('idle','按 S2 进入牌阵选择。');commandFocus();}
 if(state.phase==='spread-selecting')setQuestionStatus('idle','旋转选择牌阵，短按旋钮确认。');

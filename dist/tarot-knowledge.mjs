@@ -1,4 +1,4 @@
-export const tarotKnowledgeVersion='rws-zh-v1';
+export const tarotKnowledgeVersion='rws-zh-v2';
 
 const majors={
   'major-fool':['启程者','相信可能性，带着好奇迈出尚未被证明的一步。','自由可能滑向冒进，也可能是害怕开始而迟迟停在门口。','保留轻盈，但先确认边界与基本风险。'],
@@ -25,11 +25,58 @@ const majors={
   'major-world':['完成者','各部分正在整合，阶段性完成值得确认与收束。','临门停滞、害怕结束，或尚有一处未完成的闭环。','确认成果、补上最后一环，再决定下一段旅程。']
 };
 
+const majorVisuals={
+  'major-fool':['旅人站在悬崖边，手持白玫瑰','小狗在脚边跃起，远处有雪山与升起的太阳'],
+  'major-magician':['人物一手举杖、一手指地，头顶有无限符号','桌上同时摆着权杖、圣杯、宝剑与星币，四周有玫瑰和百合'],
+  'major-high-priestess':['女祭司坐在黑白双柱之间，柱上写着 B 与 J','石榴帷幕后藏着水面，她脚边有弯月'],
+  'major-empress':['皇后戴十二星冠冕，身边是麦田、森林与河流','座旁的盾牌刻着金星符号'],
+  'major-emperor':['皇帝坐在刻有公羊头的石座上','红袍下露出铠甲，背后是裸露的群山'],
+  'major-hierophant':['教皇举起祝福手势，脚前摆着交叉钥匙','两名信徒跪在座前，人物头戴三重冠'],
+  'major-lovers':['天使在一对赤裸男女上方展开双翼','两人身后分别是蛇与果树、火焰之树，远处有高山'],
+  'major-chariot':['战车上的人物披着铠甲，头顶是星辰帷幕','一黑一白两只狮身人面兽朝不同方向伏在车前'],
+  'major-strength':['女子温柔地合拢狮子的嘴，头顶有无限符号','白袍与花环围绕人物，远处山峰清晰'],
+  'major-hermit':['老人独立在雪山顶，手提六芒星灯','另一只手握长杖，灰色斗篷包裹全身'],
+  'major-wheel':['巨轮上写有字母与炼金符号，轮顶坐着狮身人面兽','蛇与胡狼沿轮缘升降，四角生物捧书观看'],
+  'major-justice':['人物端坐双柱之间，一手持天平、一手举剑','红袍与方形冠饰强调对称和秩序'],
+  'major-hanged-man':['人物倒悬在木架上，头部有明亮光环','一条腿弯成十字，表情平静'],
+  'major-death':['骷髅骑士骑白马前行，手持绘有白玫瑰的黑旗','国王倒地，远处双塔间升起太阳'],
+  'major-temperance':['天使在两只圣杯之间倒水，一脚入水、一脚踏地','小路通向山峰与日光，胸前有三角符号'],
+  'major-devil':['有角人物坐在倒五芒星下方','一对男女被松弛锁链系在基座上'],
+  'major-tower':['高塔被闪电击中，王冠从塔顶坠落','两个人从窗外跌落，火焰从塔身迸出'],
+  'major-star':['裸身女子同时把水倒入池中与土地','头顶一颗大星与七颗小星，远处树上停着鸟'],
+  'major-moon':['月轮俯照一犬一狼，水中爬出甲壳动物','小径从两座塔之间蜿蜒通往远方'],
+  'major-sun':['孩子骑在白马上，举着红色旗帜','高墙后向日葵盛开，巨大的太阳直射大地'],
+  'major-judgement':['天使在云中吹响号角，号旗带有红十字','人们从棺木中起身回应，远处是群山'],
+  'major-world':['舞者在月桂花环中央起舞，双手各持一根短杖','四角出现人、鹰、狮与牛四种生物']
+};
+
 const suits={
   wands:{name:'权杖',element:'火',domain:'行动、欲望与创造力',gift:'主动点燃改变',shadow:'急躁、耗竭或只凭热情',practice:'把能量放进一个明确动作'},
   cups:{name:'圣杯',element:'水',domain:'情感、关系与直觉',gift:'感受并建立真实联结',shadow:'情绪淹没、投射或逃避边界',practice:'说清感受，同时核对事实'},
   swords:{name:'宝剑',element:'风',domain:'思维、沟通与决断',gift:'切开混乱，看见核心事实',shadow:'过度分析、语言伤害或焦虑循环',practice:'把事实、解释与担忧分开'},
   pentacles:{name:'星币',element:'土',domain:'资源、身体与现实建设',gift:'让价值经由时间沉淀为成果',shadow:'匮乏感、僵化或只看短期得失',practice:'检查资源并安排可持续步骤'}
+};
+
+const suitVisuals={
+  wands:'画面反复出现带嫩芽的木杖，象征火元素的行动与生命力',
+  cups:'画面以圣杯与水为主要符号，强调情感的承接与流动',
+  swords:'画面以宝剑、风与天空为主要符号，强调思想、判断与冲突',
+  pentacles:'画面以刻有五芒星的金币与土地为主要符号，强调身体、资源与现实成果'
+};
+
+const minorScenes={
+  wands:{
+    ace:'云中伸出的手握住一根正在发芽的权杖，远处有城堡与山丘',two:'人物站在城墙上手托地球，两根权杖分立两侧',three:'人物背对观者眺望海面船只，身旁立着三根权杖',four:'四根权杖撑起花环门廊，人们在城堡前庆祝',five:'五名年轻人各举权杖交错碰撞，像竞争也像混乱的演练',six:'头戴月桂冠的骑手穿过人群，权杖上也系着胜利花环',seven:'人物站在高处举杖抵挡下方伸来的六根权杖',eight:'八根权杖从晴空中斜向飞过，下方是河流与田野',nine:'缠着绷带的人守在九根权杖前，神情警觉',ten:'人物弯腰抱着十根权杖走向不远处的城镇',page:'年轻人站在荒地凝视手中权杖，衣袍上有火蜥蜴图案',knight:'骑士策马向前，盔饰与披风如火焰扬起',queen:'皇后手持向日葵与权杖，脚边坐着黑猫，王座刻有狮子',king:'国王握着发芽的权杖，王座与衣袍布满狮子和火蜥蜴'
+  },
+  cups:{
+    ace:'云中伸手托起满溢的圣杯，鸽子俯冲而下，水流落入莲池',two:'两人相对交换圣杯，上方浮着双蛇杖与狮首',three:'三名女子举杯相庆，脚下铺着果实与丰收作物',four:'人物抱臂坐在树下，面前三只杯，云中又递来一只杯',five:'披斗篷的人凝视三只倾倒的杯，身后仍有两只直立，远处有桥与城堡',six:'两个孩子在村庄里传递盛花的杯，画面带有回忆感',seven:'人物面对云中七只杯，每只杯里呈现不同诱惑与想象',eight:'人物在月光下离开整齐摆放的八只杯，走向山路',nine:'人物满意地坐在九只排列整齐的杯前',ten:'一对伴侣在彩虹下举起双臂，十只杯横跨天空，孩子在家园旁欢跃',page:'年轻人捧杯端详，杯中突然探出一条鱼',knight:'骑士骑白马缓慢前行，双手托杯，前方有河流',queen:'皇后坐在水边凝视一只华丽封闭的圣杯',king:'国王端坐海上石座，手持圣杯与权杖，远处有船和跃鱼'
+  },
+  swords:{
+    ace:'云中伸手举起一把直立宝剑，剑尖托着王冠与月桂',two:'蒙眼女子在海边交叉双剑，身后是礁石与弯月',three:'红心被三把宝剑刺穿，背景是密云与雨水',four:'人物平躺在石棺上，墙上悬三剑，棺侧另刻一剑与彩窗',five:'前景人物收起三把剑，另外两把落地，两人向水边离去',six:'船夫载着披斗篷的人与孩子渡水，六把剑插在船头',seven:'人物回头观察营地，抱走五把剑，身后留下两把',eight:'被蒙眼绑缚的女子站在八把剑之间，脚下泥泞，远处有城堡',nine:'人物在床上捂脸惊醒，墙上横列九把剑',ten:'人物倒地，背上插着十把剑，远处水面正在破晓',page:'年轻人在强风中举剑观察，云层翻涌、鸟群盘旋',knight:'骑士举剑策马疾冲，树木和云层都被风吹斜',queen:'皇后直立举剑，另一只手向前伸出，天空有云与飞鸟',king:'国王端坐王座，宝剑竖立在身侧，背景有树木与云'
+  },
+  pentacles:{
+    ace:'云中伸手托起一枚星币，下方花园小径通向拱门与山峰',two:'人物用无限符号缠绕两枚星币，身后船只随巨浪起伏',three:'工匠站在教堂高处，两人拿着图纸与他商议',four:'人物在城市前紧抱星币，头顶与双脚也各压着星币',five:'两名贫困者冒雪经过镶有五枚星币的彩窗',six:'富者手持天平向两名跪者分发星币',seven:'农人倚着工具凝视长满星币的藤丛，等待收成',eight:'工匠坐在长凳上反复雕刻星币，成品依次陈列',nine:'女子站在葡萄园中，手套停着猎鹰，九枚星币围绕四周',ten:'家族在拱门下相聚，老人、孩子与狗被十枚星币环绕',page:'年轻人双手举起星币专注观察，身后是田野与山峰',knight:'骑士骑着静止的黑马，稳稳托着星币，身后是耕整田地',queen:'皇后坐在花园中捧着星币，脚边有兔子与繁茂植物',king:'国王坐在刻有公牛的王座上，藤蔓与城堡环绕，手握星币'
+  }
 };
 
 const ranks={
@@ -60,16 +107,16 @@ export function getPositionLens(spreadId,position){return positionLenses[spreadI
 
 export function getCardKnowledge(card){
   const major=majors[card?.id];
-  if(major)return {archetype:major[0],element:'灵',domain:'人生阶段与核心课题',upright:major[1],reversed:major[2],counsel:major[3],reflection:`${major[0]}正在邀请你承认哪一个事实？`};
+  if(major)return {visuals:majorVisuals[card.id],archetype:major[0],element:'灵',domain:'人生阶段与核心课题',upright:major[1],reversed:major[2],counsel:major[3],reflection:`${major[0]}正在邀请你承认哪一个事实？`};
   const [suitId,rankId]=String(card?.id||'').split('-'),suit=suits[suitId],rank=ranks[rankId];
   if(!suit||!rank)throw new Error(`缺少卡牌知识：${card?.id||'unknown'}`);
   const keyword=String(card.keywords||'').split(' · ')[0];
-  return {archetype:`${suit.name}的${rank[0]}`,element:suit.element,domain:suit.domain,upright:`${rank[1]}在${suit.domain}中，“${keyword}”会通过${suit.gift}逐渐变得具体。`,reversed:`${rank[2]}在${suit.domain}中，“${keyword}”可能暂时难以展开，需要留意${suit.shadow}。`,counsel:`${suit.practice}；${rank[3]}`,reflection:rank[3]};
+  return {visuals:[suitVisuals[suitId],minorScenes[suitId]?.[rankId]],archetype:`${suit.name}的${rank[0]}`,element:suit.element,domain:suit.domain,upright:`${rank[1]}在${suit.domain}中，“${keyword}”会通过${suit.gift}逐渐变得具体。`,reversed:`${rank[2]}在${suit.domain}中，“${keyword}”可能暂时难以展开，需要留意${suit.shadow}。`,counsel:`${suit.practice}；${rank[3]}`,reflection:rank[3]};
 }
 
 export function interpretCard(card,orientation='upright',position='核心',spreadId='one-card'){
   const knowledge=getCardKnowledge(card),meaning=orientation==='reversed'?knowledge.reversed:knowledge.upright;
-  return {...knowledge,meaning,text:`${getPositionLens(spreadId,position)} ${meaning} 建议：${knowledge.counsel}`,reflection:knowledge.reflection};
+  return {...knowledge,meaning,text:`牌面上，${knowledge.visuals.join('；')}。${getPositionLens(spreadId,position)} ${meaning} 建议：${knowledge.counsel}`,reflection:knowledge.reflection};
 }
 
 export function analyzeReadingPatterns(input){

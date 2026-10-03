@@ -1,7 +1,7 @@
 import {mockReadingProvider,normalizeReading} from '../dist/ai-reading.mjs';
 import {assertReadingInput,assertFollowUpPayload} from './reading-schema.mjs';
-import {buildInitialMessages} from './prompts/tarot-reading.v1.mjs';
-import {buildFollowUpMessages} from './prompts/tarot-follow-up.v1.mjs';
+import {buildInitialMessages} from './prompts/tarot-reading.v2.mjs';
+import {buildFollowUpMessages} from './prompts/tarot-follow-up.v2.mjs';
 
 function parseJsonContent(value){
   const text=typeof value==='string'?value.trim():'';
