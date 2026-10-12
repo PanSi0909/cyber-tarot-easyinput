@@ -1,6 +1,7 @@
 import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=0.7.0';
 import {interpretCard} from './tarot-knowledge.mjs?v=0.8.0';
 import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.8.0';
+import {historyRecordSchemaVersion,createHistoryRecord,upsertHistoryRecord,serializeHistoryBackup,restoreHistoryBackup,openHistoryDatabase,listHistoryRecords,saveHistoryRecord,replaceHistoryRecords} from './history.mjs?v=0.9.0';
 const $=id=>document.getElementById(id);
 const storageKey='cyber-tarot.v1',greetingKey='cyber-tarot.greeting.v1',readingStorageKey='cyber-tarot.reading.v1';
 const held=new Set(),hits=new Map(),timers=new Map();
@@ -8,6 +9,7 @@ const readingProvider=new URLSearchParams(location.search).get('provider')==='ap
 let state=fresh(),greetingPlayed=false,storageAvailable=true,received=0,accepted=0,duplicates=0,logs=[];
 let recognition=null,questionStatus='idle',resultFocus=0;
 let readingSession=null,readingStatus='idle',readingError='',readingMode=false;
+let historyDatabase=null,historyRecords=[],historyStatus='loading',historyMessage='正在读取本机历史记录…',historyLoaded=false,historyPendingRecord=null,historyPendingRecords=null,historyPendingImportCount=0,historyRetryAction='load',selectedHistoryId=null,historySaveQueue=Promise.resolve();
 let deckMotionTimer=null;
 try{state=restore(sessionStorage.getItem(storageKey));}catch{}
 try{greetingPlayed=sessionStorage.getItem(greetingKey)==='1';}catch{}
@@ -108,6 +110,50 @@ function renderResult(){
   $('result-spread').replaceChildren(...nodes);renderResultDetail();
 }
 function currentReadingInput(){return buildReadingInput(state);}
+function formatHistoryDate(value){try{return new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));}catch{return value;}}
+function historyNode(tag,value,className){const node=document.createElement(tag);if(className)node.className=className;node.textContent=value;return node;}
+function setHistoryState(status,message,retryAction=historyRetryAction){historyStatus=status;historyMessage=message;historyRetryAction=retryAction;renderHistory();}
+function renderHistoryDetail(record){
+  const detail=$('history-detail');detail.hidden=!record;if(!record)return;
+  const reading=record.ai.firstReading;$('history-detail-time').textContent=`${formatHistoryDate(record.createdAt)} · 更新 ${formatHistoryDate(record.updatedAt)}`;$('history-detail-title').textContent=record.question;
+  $('history-detail-deck').textContent=`${record.deck.name} · ${record.deck.totalCards} 张`;$('history-detail-spread').textContent=`${record.spread.name} · ${record.spread.count} 张`;$('history-detail-version').textContent=record.schemaVersion;
+  $('history-detail-question').textContent=record.question;$('history-detail-cards').replaceChildren(...record.cards.map(card=>historyNode('li',`${String(card.order).padStart(2,'0')} · ${card.position} · ${card.name} · ${card.orientation==='reversed'?'逆位':'正位'}`)));
+  $('history-detail-reading-title').textContent=reading.title||'综合解读';$('history-detail-overview').textContent=reading.overview||'';$('history-detail-card-readings').replaceChildren(...reading.cardReadings.map((item,index)=>{const card=record.cards[index],node=document.createElement('li');node.append(historyNode('strong',`${card.position} · ${card.name}${card.orientation==='reversed'?'逆位':'正位'}`),historyNode('p',item.visualReading),historyNode('p',item.baseMeaning),historyNode('p',item.contextualReading));return node;}));$('history-detail-flow').textContent=`${reading.flow.movement} ${reading.flow.tension} ${reading.flow.direction}`;$('history-detail-synthesis').textContent=reading.synthesis||'';$('history-detail-guidance').replaceChildren(...(reading.guidance||[]).map(item=>historyNode('li',item)));$('history-detail-voice').textContent=reading.voiceSummary||'';
+  const followUps=record.ai.followUps||[];$('history-detail-follow-up-section').hidden=!followUps.length;$('history-detail-follow-ups').replaceChildren(...followUps.map((turn,index)=>{const item=document.createElement('li'),question=historyNode('strong',`追问 ${index+1} · ${turn.question}`),answer=historyNode('p',turn.answer);item.append(question,answer);return item;}));
+}
+function renderHistory(){
+  const labels={loading:'正在加载',saving:'正在保存',saved:'已保存',error:'失败'},busy=historyStatus==='loading'||historyStatus==='saving';$('history-status').dataset.state=historyStatus;$('history-status').textContent=labels[historyStatus]||historyStatus;$('history-message').textContent=historyMessage;$('history-retry').hidden=historyStatus!=='error';$('history-export').disabled=!historyLoaded||!historyRecords.length||busy;document.querySelector('.file-action').setAttribute('aria-disabled',String(!historyLoaded||busy));
+  let nodes;if(!historyRecords.length){nodes=[historyNode('li',historyStatus==='loading'?'正在加载历史记录…':'还没有已完成的占卜记录。生成首次综合解读后会自动保存。','history-empty')];}else nodes=historyRecords.map(record=>{const item=document.createElement('li'),button=document.createElement('button');button.type='button';button.setAttribute('aria-current',String(record.id===selectedHistoryId));button.append(historyNode('small',formatHistoryDate(record.createdAt)),historyNode('strong',record.question),historyNode('span',`${record.spread.name} · ${record.cards.map(card=>`${card.name}${card.orientation==='reversed'?'逆':''}`).join(' / ')} · ${record.ai.followUps.length} 次追问`));button.addEventListener('click',()=>{selectedHistoryId=record.id;renderHistory();$('history-detail').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});});item.append(button);return item;});$('history-list').replaceChildren(...nodes);
+  const selected=historyRecords.find(record=>record.id===selectedHistoryId);renderHistoryDetail(selected);
+}
+async function loadHistory(){
+  historyLoaded=false;setHistoryState('loading','正在读取本机历史记录…','load');
+  try{historyDatabase=historyDatabase||await openHistoryDatabase();historyRecords=await listHistoryRecords(historyDatabase);historyLoaded=true;historyPendingRecord=null;historyPendingRecords=null;historyPendingImportCount=0;if(selectedHistoryId&&!historyRecords.some(record=>record.id===selectedHistoryId))selectedHistoryId=null;setHistoryState('saved',historyRecords.length?`已加载 ${historyRecords.length} 条完整会话。`:'历史记录已就绪；首次综合解读成功后会自动保存。');if(readingSession)archiveCurrentSession();return true;}
+  catch(error){setHistoryState('error',`历史记录加载失败：${error?.message||'浏览器存储不可用'}`,'load');return false;}
+}
+function sameHistoryPayload(existing,next){if(!existing)return false;return JSON.stringify(existing)===JSON.stringify({...next,updatedAt:existing.updatedAt});}
+function persistHistoryRecord(record){
+  historyPendingRecord=record;historySaveQueue=historySaveQueue.catch(()=>{}).then(async()=>{setHistoryState('saving','正在自动保存完整占卜会话…','save-record');await saveHistoryRecord(historyDatabase,record);historyRecords=upsertHistoryRecord(historyRecords,record);if(historyPendingRecord===record)historyPendingRecord=null;setHistoryState('saved',`完整会话已自动保存 · 当前共 ${historyRecords.length} 条。`);return true;}).catch(error=>{setHistoryState('error',`自动保存失败：${error?.message||'请稍后重试'} 当前牌局仍保持不变。`,'save-record');return false;});return historySaveQueue;
+}
+function archiveCurrentSession(){
+  if(!historyLoaded||!historyDatabase||state.phase!=='revealed'||!readingSession)return Promise.resolve(false);
+  let record;try{record=createHistoryRecord(state,currentReadingInput(),readingSession);}catch(error){setHistoryState('error',`历史记录整理失败：${error?.message||'会话不完整'}`,'load');return Promise.resolve(false);}
+  const existing=historyRecords.find(item=>item.id===record.id);if(sameHistoryPayload(existing,record))return Promise.resolve(true);return persistHistoryRecord(record);
+}
+function exportHistory(){
+  if(!historyLoaded||!historyRecords.length)return false;
+  try{const content=serializeHistoryBackup(historyRecords),blob=new Blob([content],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a'),day=new Date().toISOString().slice(0,10);link.href=url;link.download=`cyber-tarot-history-${day}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),0);setHistoryState('saved',`已导出 ${historyRecords.length} 条历史记录。`);return true;}catch(error){setHistoryState('error',`导出失败：${error?.message||'无法生成备份'}`,'load');return false;}
+}
+async function persistRestoredHistory(records,imported){
+  historyPendingRecords=records;historyPendingImportCount=imported;setHistoryState('saving','正在保存恢复后的历史记录…','save-all');
+  try{await replaceHistoryRecords(historyDatabase,records);historyRecords=records;historyPendingRecords=null;historyPendingImportCount=0;setHistoryState('saved',`已恢复 ${imported} 条备份记录，合并后共 ${historyRecords.length} 条。`);return true;}catch(error){setHistoryState('error',`恢复内容保存失败：${error?.message||'请稍后重试'}`,'save-all');return false;}
+}
+async function importHistory(event){
+  const file=event.target.files?.[0];event.target.value='';if(!file)return;if(!historyLoaded||!historyDatabase){setHistoryState('error','历史存储尚未就绪，请先重试加载。','load');return;}
+  setHistoryState('loading','正在读取并校验 JSON 备份…','import');
+  try{const restored=restoreHistoryBackup(historyRecords,await file.text());await persistRestoredHistory(restored.records,restored.imported);}catch(error){setHistoryState('error',`恢复失败：${error?.message||'备份文件无效'} 请重新选择文件。`,'import');}
+}
+function retryHistory(){if(historyRetryAction==='save-record'&&historyPendingRecord)return void persistHistoryRecord(historyPendingRecord);if(historyRetryAction==='save-all'&&historyPendingRecords)return void persistRestoredHistory(historyPendingRecords,historyPendingImportCount);if(historyRetryAction==='import')return $('history-import').click();void loadHistory();}
 function saveReadingSession(){try{sessionStorage.setItem(readingStorageKey,JSON.stringify(readingSession));}catch{storageAvailable=false;}}
 function clearReadingSession(){readingSession=null;readingStatus='idle';readingError='';try{sessionStorage.removeItem(readingStorageKey);}catch{storageAvailable=false;}}
 function loadReadingSession(){
@@ -151,7 +197,7 @@ async function generateReading(){
   const input=currentReadingInput(),fingerprint=readingFingerprint(input);readingStatus='loading';readingError='';renderReading();
   try{
     const reading=await requestInitialReading(readingProvider,input);if(state.phase!=='revealed'||readingFingerprint(currentReadingInput())!==fingerprint)return false;
-    readingSession=createReadingSession(input,reading,readingProvider.id);readingStatus='ready';saveReadingSession();renderReading();return true;
+    readingSession=createReadingSession(input,reading,readingProvider.id);readingStatus='ready';saveReadingSession();renderReading();void archiveCurrentSession();return true;
   }catch(error){readingStatus='error';readingError=`解读失败：${error?.message||'接口暂时不可用'}。可以重试，牌阵不会改变。`;renderReading();return false;}
 }
 async function sendFollowUp(){
@@ -159,7 +205,7 @@ async function sendFollowUp(){
   const input=currentReadingInput(),fingerprint=readingFingerprint(input),session=readingSession;readingStatus='following';readingError='';renderReading();
   try{
     const turn=await requestFollowUp(readingProvider,input,session,question);if(state.phase!=='revealed'||readingFingerprint(currentReadingInput())!==fingerprint||readingSession!==session)return false;
-    readingSession=appendFollowUp(session,turn);readingStatus='ready';$('follow-up').value='';$('follow-up').blur();saveReadingSession();renderReading();commandFocus();scrollReadingIntoView($('follow-up-history'));return true;
+    readingSession=appendFollowUp(session,turn);readingStatus='ready';$('follow-up').value='';$('follow-up').blur();saveReadingSession();renderReading();void archiveCurrentSession();commandFocus();scrollReadingIntoView($('follow-up-history'));return true;
   }catch(error){readingStatus='ready';renderReading();$('ai-reading-status').textContent=`追问失败：${error?.message||'接口暂时不可用'}。可保留问题后重试。`;return false;}
 }
 function render(){
@@ -240,6 +286,10 @@ $('confirm-question').addEventListener('click',()=>confirmQuestion('鼠标／触
 $('generate-reading').addEventListener('click',()=>enterReading('鼠标／触控'));
 $('send-follow-up').addEventListener('click',sendFollowUp);
 $('follow-up').addEventListener('input',()=>{if(readingMode&&$('follow-up').value.trim())scrollReadingIntoView($('follow-up'));});
+$('history-export').addEventListener('click',exportHistory);
+$('history-import').addEventListener('change',importHistory);
+$('history-retry').addEventListener('click',retryHistory);
+$('history-close').addEventListener('click',()=>{selectedHistoryId=null;renderHistory();});
 $('show-input').addEventListener('click',()=>{const open=$('input-panel').hidden;$('input-panel').hidden=!open;$('show-input').setAttribute('aria-expanded',String(open));if(open)$('input-panel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'nearest'});});
 const codes=[...Array.from({length:8},(_,i)=>'Digit'+(i+1)),'ArrowLeft','ArrowRight','Enter'];
 for(const code of codes){const key=document.createElement('div');key.className='monitor-key';key.dataset.code=code;key.innerHTML=`${code.startsWith('Digit')?code.slice(-1):code==='ArrowLeft'?'←':code==='ArrowRight'?'→':'Enter'}<small>0 次</small>`;$('key-monitor').append(key);}
@@ -270,7 +320,7 @@ document.addEventListener('visibilitychange',()=>{focusStatus();if(!document.hid
 document.addEventListener('pointerup',event=>{if(['idle','configuring'].includes(state.phase)&&!event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]'))requestAnimationFrame(commandFocus);});
 $('clear-log').addEventListener('click',()=>{received=accepted=duplicates=0;logs=[];hits.clear();for(const tile of $('key-monitor').children)tile.querySelector('small').textContent='0 次';updateLog();});
 $('provider-badge').textContent=readingProvider===apiReadingProvider?'安全服务端接口 · 密钥仅在服务端':'视觉线索模拟接口 · 零模型费用';
-$('question-draft').value=state.question||'';if(state.phase==='revealed')loadReadingSession();render();focusStatus();
+$('question-draft').value=state.question||'';if(state.phase==='revealed')loadReadingSession();render();renderHistory();void loadHistory();focusStatus();
 if(state.phase==='configuring'){setQuestionStatus('idle','按 S2 进入牌阵选择。');commandFocus();}
 if(state.phase==='spread-selecting')setQuestionStatus('idle','旋转选择牌阵，短按旋钮确认。');
 if(state.phase==='selecting'){

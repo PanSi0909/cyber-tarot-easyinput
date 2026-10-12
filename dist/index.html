@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a1018">
-  <meta name="description" content="用实体按键、旋钮和语音问题完成牌阵，并生成可追问的结构化 AI 解读。">
+  <meta name="description" content="用实体按键、旋钮和语音问题完成牌阵，生成可追问的结构化 AI 解读，并自动保存完整占卜历史。">
   <title>赛博塔罗 · Between Signals</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a1018'/%3E%3Cpath d='M16 4 20 12 28 16 20 20 16 28 12 20 4 16 12 12Z' fill='%23b5eadf'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=0.8.0">
-  <script type="module" src="app.mjs?v=0.8.1"></script>
+  <link rel="stylesheet" href="styles.css?v=0.9.0">
+  <script type="module" src="app.mjs?v=0.9.0"></script>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✧</span> 赛博塔罗 <span class="brand-en">BETWEEN SIGNALS</span></a><span class="edition">AI 解读 / 04</span></header>
+  <header class="topbar"><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✧</span> 赛博塔罗 <span class="brand-en">BETWEEN SIGNALS</span></a><span class="edition">流程与记录 / 05</span></header>
   <main>
     <section class="intro"><div><p class="eyebrow">A MOMENT FOR YOURSELF</p><h1>让直觉，落在指尖。</h1><p class="intro-copy">想一件此刻在意的事。转动、停下，翻开属于这一刻的牌。</p></div><button class="quiet" id="show-input" aria-expanded="false" aria-controls="input-panel">输入验证 <span aria-hidden="true">↗</span></button></section>
     <input id="command-input" class="command-sink" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="EasyInput 指令接收" autofocus>
@@ -54,6 +54,24 @@
       </div>
     </section>
     <section class="control-strip" aria-label="操作提示"><div><span class="step-num">01</span><p><strong>开始 / 新一轮</strong><span><kbd>开始</kbd> · S1</span></p></div><div><span class="step-num">02</span><p><strong>进入牌阵选择</strong><span><kbd>牌阵选择</kbd> · S2</span></p></div><div><span class="step-num">03</span><p><strong>选择并确认牌阵</strong><span>旋转 · 短按旋钮</span></p></div><div><span class="step-num">04</span><p><strong>提问并抽牌</strong><span>S3 说话 · 旋转 · 短按</span></p></div><div><span class="step-num">05</span><p><strong>综合解读</strong><span><kbd>综合解读</kbd> · S4</span></p></div><div><span class="step-num">06</span><p><strong>浏览与追问</strong><span>旋钮滚动 · S3 追问</span></p></div></section>
+    <section class="history-panel" aria-labelledby="history-heading">
+      <div class="history-header">
+        <div><p class="eyebrow">SESSION ARCHIVE</p><h2 id="history-heading">占卜历史</h2><p>首次综合解读成功后自动保存；后续追问会更新同一条记录。</p></div>
+        <div class="history-actions"><button id="history-export" class="quiet" disabled>导出 JSON</button><label class="quiet file-action" for="history-import">恢复备份</label><input id="history-import" type="file" accept="application/json,.json" hidden></div>
+      </div>
+      <div class="history-status-row"><span id="history-status" class="history-status" data-state="loading">正在加载</span><p id="history-message" role="status" aria-live="polite">正在读取本机历史记录…</p><button id="history-retry" class="quiet" hidden>重试</button></div>
+      <div class="history-layout">
+        <ol id="history-list" class="history-list" aria-label="占卜历史记录"><li class="history-empty">正在加载历史记录…</li></ol>
+        <article id="history-detail" class="history-detail" hidden aria-labelledby="history-detail-title">
+          <div class="history-detail-header"><div><p id="history-detail-time" class="eyebrow"></p><h3 id="history-detail-title"></h3></div><button id="history-close" class="quiet" aria-label="关闭历史详情">关闭</button></div>
+          <dl class="history-meta"><div><dt>牌组</dt><dd id="history-detail-deck"></dd></div><div><dt>牌阵</dt><dd id="history-detail-spread"></dd></div><div><dt>记录版本</dt><dd id="history-detail-version"></dd></div></dl>
+          <section><h4>问题</h4><p id="history-detail-question"></p></section>
+          <section><h4>卡牌与正逆位</h4><ol id="history-detail-cards" class="history-card-list"></ol></section>
+          <section><h4>AI 解读</h4><h5 id="history-detail-reading-title"></h5><p id="history-detail-overview"></p><ol id="history-detail-card-readings" class="follow-up-history"></ol><h5>能量流动</h5><p id="history-detail-flow"></p><h5>综合结论</h5><p id="history-detail-synthesis"></p><h5>行动建议</h5><ul id="history-detail-guidance"></ul><div class="history-voice"><span>语音简版</span><p id="history-detail-voice"></p></div></section>
+          <section id="history-detail-follow-up-section"><h4>追问</h4><ol id="history-detail-follow-ups" class="follow-up-history"></ol></section>
+        </article>
+      </div>
+    </section>
     <section id="input-panel" class="input-panel" hidden aria-labelledby="input-title">
       <div class="input-header"><div><p class="eyebrow">INPUT CHECK</p><h2 id="input-title">看看网页收到了什么</h2></div><label class="test-toggle"><input type="checkbox" id="test-only"> 仅测试输入，不操作牌组</label></div>
       <p>这里仅用于调试按键，不是正常操作入口。S1/S2 无论映射成固定文字还是旧数字键，网页都会执行同一个开始或牌阵选择动作；左右方向和回车用于旋钮。</p>
@@ -63,6 +81,6 @@
       <details><summary>当前 EasyInput 配置边界</summary><ol class="setup-list"><li>S1 触发开始，S2 进入牌阵选择，S4 固定文字“综合解读”直达完整解读。</li><li>旋钮选择 1/3/5/10 张牌阵并短按确认；进入综合解读后，旋钮改为上下滚动。</li><li>S3 抽牌前输入原问题，综合解读生成后输入追问；两个阶段互不冲突。</li><li>牌组每轮随机洗牌；页面只呈现当前附近的牌，但旋钮可循环到完整 78 张。</li></ol><p>本项目不会替你操作 EasyInput App，也不需要 BOOT、烧录或复位。</p></details>
     </section>
   </main>
-    <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>第 4 课 · V0.8.1</span></footer>
+    <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>第 5 课 · V0.9.0</span></footer>
 </body>
 </html>
