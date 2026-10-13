@@ -41,7 +41,7 @@ export function createHistoryRecord(state,input,session,updatedAt=new Date().toI
 
 export function upsertHistoryRecord(records,record){
   const current=Array.isArray(records)?records.map(validateHistoryRecord):[],next=validateHistoryRecord(record),index=current.findIndex(item=>item.id===next.id);
-  if(index<0)current.push(next);else if(Date.parse(next.updatedAt)>=Date.parse(current[index].updatedAt))current[index]=next;
+  if(index<0)current.push(next);else if(Date.parse(next.updatedAt)>Date.parse(current[index].updatedAt))current[index]=next;
   return current.sort((a,b)=>Date.parse(b.updatedAt)-Date.parse(a.updatedAt));
 }
 

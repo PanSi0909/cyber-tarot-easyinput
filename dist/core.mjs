@@ -31,6 +31,7 @@ export const spreadPositions={
 };
 export function fixedTextAction(value){
   const normalized=typeof value==='string'?value.replaceAll(/\s/g,''):'';
+  if(['历史备份','S5历史备份'].includes(normalized))return 'history';
   if(normalized.endsWith('综合解读'))return 'reading';
   if(normalized.endsWith('牌阵选择')||normalized.endsWith('牌组选择'))return 'setup';
   return normalized.endsWith('开始')?'start':null;
@@ -127,6 +128,6 @@ export function keyInput(event,held){
   if(!monitored||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey)return null;
   if(event.repeat||held.has(code))return {code,duplicate:true};
   held.add(code);
-  const action=code==='Digit1'||code==='Numpad1'?'start':code==='Digit2'||code==='Numpad2'?'setup':code==='Digit3'||code==='Numpad3'?'question':code==='Digit4'||code==='Numpad4'?'reading':code==='ArrowLeft'?'left':code==='ArrowRight'?'right':code==='Enter'||code==='NumpadEnter'?'confirm':null;
+  const action=code==='Digit1'||code==='Numpad1'?'start':code==='Digit2'||code==='Numpad2'?'setup':code==='Digit3'||code==='Numpad3'?'question':code==='Digit4'||code==='Numpad4'?'reading':code==='Digit5'||code==='Numpad5'?'history':code==='ArrowLeft'?'left':code==='ArrowRight'?'right':code==='Enter'||code==='NumpadEnter'?'confirm':null;
   return {code,duplicate:false,action};
 }

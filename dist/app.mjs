@@ -1,4 +1,4 @@
-import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=0.7.0';
+import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=0.9.1';
 import {interpretCard} from './tarot-knowledge.mjs?v=0.8.0';
 import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.8.0';
 import {historyRecordSchemaVersion,createHistoryRecord,upsertHistoryRecord,serializeHistoryBackup,restoreHistoryBackup,openHistoryDatabase,listHistoryRecords,saveHistoryRecord,replaceHistoryRecords} from './history.mjs?v=0.9.0';
@@ -10,13 +10,14 @@ let state=fresh(),greetingPlayed=false,storageAvailable=true,received=0,accepted
 let recognition=null,questionStatus='idle',resultFocus=0;
 let readingSession=null,readingStatus='idle',readingError='',readingMode=false;
 let historyDatabase=null,historyRecords=[],historyStatus='loading',historyMessage='正在读取本机历史记录…',historyLoaded=false,historyPendingRecord=null,historyPendingRecords=null,historyPendingImportCount=0,historyRetryAction='load',selectedHistoryId=null,historySaveQueue=Promise.resolve();
+let historyToolOpen=false,historyToolIndex=0,readingScrollBeforeHistory=0;
 let deckMotionTimer=null;
 try{state=restore(sessionStorage.getItem(storageKey));}catch{}
 try{greetingPlayed=sessionStorage.getItem(greetingKey)==='1';}catch{}
 
-function acceptsHardwareCommand(){return ['idle','configuring','revealed'].includes(state.phase);}
+function acceptsHardwareCommand(){return historyToolOpen||['idle','configuring','revealed'].includes(state.phase);}
 function userIsEditing(){const active=document.activeElement;return active&&active!==$('command-input')&&active.matches('input,textarea,select,[contenteditable="true"]');}
-function commandFocus(){if(!document.hasFocus()||userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
+function commandFocus(){if(!document.hasFocus())return;if(historyToolOpen){$('command-input').focus({preventScroll:true});return;}if(userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
 function saveState(){try{sessionStorage.setItem(storageKey,JSON.stringify(state));}catch{storageAvailable=false;}}
 function currentSpread(){return spreads.find(spread=>spread.id===state.spreadChoice);}
 function updateQuestionControls(){
@@ -113,6 +114,24 @@ function currentReadingInput(){return buildReadingInput(state);}
 function formatHistoryDate(value){try{return new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));}catch{return value;}}
 function historyNode(tag,value,className){const node=document.createElement(tag);if(className)node.className=className;node.textContent=value;return node;}
 function setHistoryState(status,message,retryAction=historyRetryAction){historyStatus=status;historyMessage=message;historyRetryAction=retryAction;renderHistory();}
+function renderHistoryTool(){
+  $('history-tool').hidden=!historyToolOpen;$('history-tool-toggle').setAttribute('aria-expanded',String(historyToolOpen));$('result-overlay').hidden=state.phase!=='revealed'||historyToolOpen;
+  [$('history-export'),$('history-restore')].forEach((option,index)=>{const selected=index===historyToolIndex;option.setAttribute('aria-selected',String(selected));option.tabIndex=selected?0:-1;});
+}
+function setHistoryToolOpen(open,source){
+  if(open&&state.phase==='revealed')readingScrollBeforeHistory=document.querySelector('.result-panel').scrollTop;
+  historyToolOpen=open;renderHistoryTool();
+  if(open){$('stage-message').textContent=`${source} · 旋转选择“保存历史备份”或“从备份恢复”，短按旋钮确认。`;requestAnimationFrame(()=>{$('history-tool').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});$('command-input').focus({preventScroll:true});});}
+  else{$('stage-message').textContent=`${source} · 历史备份工具已关闭，已返回综合解读。`;requestAnimationFrame(()=>{commandFocus();if(state.phase==='revealed')requestAnimationFrame(()=>{document.querySelector('.result-panel').scrollTop=readingScrollBeforeHistory;});});}
+  return true;
+}
+function toggleHistoryTool(source){return setHistoryToolOpen(!historyToolOpen,source);}
+function moveHistoryTool(action,source){historyToolIndex=1-historyToolIndex;renderHistoryTool();$('stage-message').textContent=`${source} · 已选择${historyToolIndex===0?'“保存历史备份”':'“从备份恢复”'}，短按旋钮确认。`;return true;}
+function confirmHistoryTool(source){
+  if(historyToolIndex===0){if($('history-export').disabled){setHistoryState('saved','还没有可保存的占卜历史。首次综合解读成功后会自动产生记录。');return false;}return exportHistory();}
+  if($('history-restore').disabled){setHistoryState('error','历史存储尚未就绪，请稍后重试。','load');return false;}
+  $('stage-message').textContent=`${source} · 请选择以前保存的历史备份文件。`;$('history-import').click();return true;
+}
 function renderHistoryDetail(record){
   const detail=$('history-detail');detail.hidden=!record;if(!record)return;
   const reading=record.ai.firstReading;$('history-detail-time').textContent=`${formatHistoryDate(record.createdAt)} · 更新 ${formatHistoryDate(record.updatedAt)}`;$('history-detail-title').textContent=record.question;
@@ -122,7 +141,7 @@ function renderHistoryDetail(record){
   const followUps=record.ai.followUps||[];$('history-detail-follow-up-section').hidden=!followUps.length;$('history-detail-follow-ups').replaceChildren(...followUps.map((turn,index)=>{const item=document.createElement('li'),question=historyNode('strong',`追问 ${index+1} · ${turn.question}`),answer=historyNode('p',turn.answer);item.append(question,answer);return item;}));
 }
 function renderHistory(){
-  const labels={loading:'正在加载',saving:'正在保存',saved:'已保存',error:'失败'},busy=historyStatus==='loading'||historyStatus==='saving';$('history-status').dataset.state=historyStatus;$('history-status').textContent=labels[historyStatus]||historyStatus;$('history-message').textContent=historyMessage;$('history-retry').hidden=historyStatus!=='error';$('history-export').disabled=!historyLoaded||!historyRecords.length||busy;document.querySelector('.file-action').setAttribute('aria-disabled',String(!historyLoaded||busy));
+  const labels={loading:'正在加载',saving:'正在保存',saved:'已保存',error:'失败'},busy=historyStatus==='loading'||historyStatus==='saving';$('history-status').dataset.state=historyStatus;$('history-status').textContent=labels[historyStatus]||historyStatus;$('history-message').textContent=historyMessage;$('history-retry').hidden=historyStatus!=='error';$('history-export').disabled=!historyLoaded||!historyRecords.length||busy;$('history-restore').disabled=!historyLoaded||busy;renderHistoryTool();
   let nodes;if(!historyRecords.length){nodes=[historyNode('li',historyStatus==='loading'?'正在加载历史记录…':'还没有已完成的占卜记录。生成首次综合解读后会自动保存。','history-empty')];}else nodes=historyRecords.map(record=>{const item=document.createElement('li'),button=document.createElement('button');button.type='button';button.setAttribute('aria-current',String(record.id===selectedHistoryId));button.append(historyNode('small',formatHistoryDate(record.createdAt)),historyNode('strong',record.question),historyNode('span',`${record.spread.name} · ${record.cards.map(card=>`${card.name}${card.orientation==='reversed'?'逆':''}`).join(' / ')} · ${record.ai.followUps.length} 次追问`));button.addEventListener('click',()=>{selectedHistoryId=record.id;renderHistory();$('history-detail').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});});item.append(button);return item;});$('history-list').replaceChildren(...nodes);
   const selected=historyRecords.find(record=>record.id===selectedHistoryId);renderHistoryDetail(selected);
 }
@@ -142,16 +161,16 @@ function archiveCurrentSession(){
 }
 function exportHistory(){
   if(!historyLoaded||!historyRecords.length)return false;
-  try{const content=serializeHistoryBackup(historyRecords),blob=new Blob([content],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a'),day=new Date().toISOString().slice(0,10);link.href=url;link.download=`cyber-tarot-history-${day}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),0);setHistoryState('saved',`已导出 ${historyRecords.length} 条历史记录。`);return true;}catch(error){setHistoryState('error',`导出失败：${error?.message||'无法生成备份'}`,'load');return false;}
+  try{const content=serializeHistoryBackup(historyRecords),blob=new Blob([content],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a'),day=new Date().toISOString().slice(0,10);link.href=url;link.download=`cyber-tarot-history-${day}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),0);setHistoryState('saved',`历史备份已保存到下载文件夹，共 ${historyRecords.length} 条记录。请妥善保管这个文件。`);return true;}catch(error){setHistoryState('error',`保存备份失败：${error?.message||'无法生成备份文件'} 当前历史记录没有受到影响。`,'load');return false;}
 }
 async function persistRestoredHistory(records,imported){
   historyPendingRecords=records;historyPendingImportCount=imported;setHistoryState('saving','正在保存恢复后的历史记录…','save-all');
-  try{await replaceHistoryRecords(historyDatabase,records);historyRecords=records;historyPendingRecords=null;historyPendingImportCount=0;setHistoryState('saved',`已恢复 ${imported} 条备份记录，合并后共 ${historyRecords.length} 条。`);return true;}catch(error){setHistoryState('error',`恢复内容保存失败：${error?.message||'请稍后重试'}`,'save-all');return false;}
+  try{await replaceHistoryRecords(historyDatabase,records);historyRecords=records;historyPendingRecords=null;historyPendingImportCount=0;setHistoryState('saved',`已从备份找回 ${imported} 条记录，合并后共有 ${historyRecords.length} 条。`);return true;}catch(error){setHistoryState('error',`恢复内容保存失败：${error?.message||'请稍后重试'} 当前历史记录没有受到影响。`,'save-all');return false;}
 }
 async function importHistory(event){
-  const file=event.target.files?.[0];event.target.value='';if(!file)return;if(!historyLoaded||!historyDatabase){setHistoryState('error','历史存储尚未就绪，请先重试加载。','load');return;}
-  setHistoryState('loading','正在读取并校验 JSON 备份…','import');
-  try{const restored=restoreHistoryBackup(historyRecords,await file.text());await persistRestoredHistory(restored.records,restored.imported);}catch(error){setHistoryState('error',`恢复失败：${error?.message||'备份文件无效'} 请重新选择文件。`,'import');}
+  const file=event.target.files?.[0];event.target.value='';if(!file){requestAnimationFrame(commandFocus);return;}if(!historyLoaded||!historyDatabase){setHistoryState('error','历史存储尚未就绪，请先重试加载。','load');requestAnimationFrame(commandFocus);return;}
+  setHistoryState('loading','正在读取并检查历史备份…','import');
+  try{const restored=restoreHistoryBackup(historyRecords,await file.text());await persistRestoredHistory(restored.records,restored.imported);}catch(error){setHistoryState('error',`这个文件不是有效的赛博塔罗历史备份：${error?.message||'无法读取文件'} 当前历史记录没有受到影响。`,'import');}finally{requestAnimationFrame(commandFocus);}
 }
 function retryHistory(){if(historyRetryAction==='save-record'&&historyPendingRecord)return void persistHistoryRecord(historyPendingRecord);if(historyRetryAction==='save-all'&&historyPendingRecords)return void persistRestoredHistory(historyPendingRecords,historyPendingImportCount);if(historyRetryAction==='import')return $('history-import').click();void loadHistory();}
 function saveReadingSession(){try{sessionStorage.setItem(readingStorageKey,JSON.stringify(readingSession));}catch{storageAvailable=false;}}
@@ -246,7 +265,7 @@ function dispatch(action,source){
 }
 function openSetup(source){if(state.phase==='configuring')return dispatch('setup',source);if(state.phase==='spread-selecting')return true;if(state.phase==='selecting')return focusQuestion();$('stage-message').textContent=state.phase==='idle'?'先按 S1 开始。':'按 S1 开始新一轮后再选择牌阵。';return false;}
 function showResultStep(action){if(state.phase!=='revealed'||!['left','right'].includes(action))return false;if(scrollReadingContent(action))return true;resultFocus=(resultFocus+(action==='left'?-1:1)+state.results.length)%state.results.length;renderResultDetail();return true;}
-function performAction(action,source){if(action==='start')playGreeting();if(action==='setup')return openSetup(source);if(action==='reading')return enterReading(source);if(action==='question')return state.phase==='revealed'?focusFollowUp(source):focusQuestion();if(showResultStep(action))return true;if(action==='confirm'&&document.activeElement===$('follow-up')){void sendFollowUp();return true;}if(action==='confirm'&&document.activeElement===$('question-draft'))return confirmQuestion(source);return dispatch(action,source);}
+function performAction(action,source){if(action==='history')return toggleHistoryTool(source);if(historyToolOpen&&['left','right'].includes(action))return moveHistoryTool(action,source);if(historyToolOpen&&action==='confirm')return confirmHistoryTool(source);if(historyToolOpen)setHistoryToolOpen(false,source);if(action==='start')playGreeting();if(action==='setup')return openSetup(source);if(action==='reading')return enterReading(source);if(action==='question')return state.phase==='revealed'?focusFollowUp(source):focusQuestion();if(showResultStep(action))return true;if(action==='confirm'&&document.activeElement===$('follow-up')){void sendFollowUp();return true;}if(action==='confirm'&&document.activeElement===$('question-draft'))return confirmQuestion(source);return dispatch(action,source);}
 function mainAction(){if(state.phase==='idle'||state.phase==='revealed')return 'start';if(state.phase==='configuring')return 'setup';return 'confirm';}
 $('main-action').addEventListener('click',()=>performAction(mainAction(),'鼠标／触控'));
 $('question-action').addEventListener('click',()=>performAction('question','鼠标／触控'));
@@ -255,7 +274,7 @@ $('next').addEventListener('click',()=>performAction('right','鼠标／触控'))
 $('new-round').addEventListener('click',()=>performAction('start','鼠标／触控'));
 function receiveFixedText(value){
   const command=fixedTextAction(value);if(!command)return false;$('command-input').value='';received++;accepted++;
-  const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
+  const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读'],history:['5','历史备份']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
   logs.unshift(`${new Date().toLocaleTimeString('zh-CN',{hour12:false})}  S${meta[0]}“${meta[1]}”  → ${outcome}`);logs=logs.slice(0,20);updateLog();return true;
 }
 function routeCommandInput(){
@@ -285,8 +304,10 @@ function confirmQuestion(source){
 $('confirm-question').addEventListener('click',()=>confirmQuestion('鼠标／触控'));
 $('generate-reading').addEventListener('click',()=>enterReading('鼠标／触控'));
 $('send-follow-up').addEventListener('click',sendFollowUp);
-$('follow-up').addEventListener('input',()=>{if(readingMode&&$('follow-up').value.trim())scrollReadingIntoView($('follow-up'));});
-$('history-export').addEventListener('click',exportHistory);
+$('follow-up').addEventListener('input',()=>{const value=$('follow-up').value,normalized=value.replaceAll(/\s/g,'');if(['历史备份','S5历史备份'].includes(normalized)){$('follow-up').value='';receiveFixedText(value);return;}if(readingMode&&value.trim())scrollReadingIntoView($('follow-up'));});
+$('history-tool-toggle').addEventListener('click',()=>toggleHistoryTool('鼠标／触控'));
+$('history-export').addEventListener('click',()=>{historyToolIndex=0;renderHistoryTool();exportHistory();});
+$('history-restore').addEventListener('click',()=>{historyToolIndex=1;renderHistoryTool();$('history-import').click();});
 $('history-import').addEventListener('change',importHistory);
 $('history-retry').addEventListener('click',retryHistory);
 $('history-close').addEventListener('click',()=>{selectedHistoryId=null;renderHistory();});
@@ -302,8 +323,8 @@ document.addEventListener('keydown',event=>{
   if(acceptsHardwareCommand()&&document.activeElement!==$('command-input')&&!interactive&&!event.ctrlKey&&!event.metaKey&&!event.altKey)$('command-input').focus({preventScroll:true});
 },true);
 document.addEventListener('keydown',event=>{
-  const interactive=event.target.closest('button,a,input,textarea,select,[contenteditable="true"],summary'),questionConfirm=interactive?.id==='question-draft'&&['Enter','NumpadEnter'].includes(event.code),questionShortcut=interactive?.id==='question-draft'&&['Digit3','Numpad3'].includes(event.code),followUpConfirm=interactive?.id==='follow-up'&&['Enter','NumpadEnter'].includes(event.code),followUpShortcut=interactive?.id==='follow-up'&&['Digit3','Numpad3'].includes(event.code),followUpScroll=interactive?.id==='follow-up'&&['ArrowLeft','ArrowRight'].includes(event.code),commandKey=interactive?.id==='command-input';
-  if(interactive&&interactive.id!=='test-only'&&!questionConfirm&&!questionShortcut&&!followUpConfirm&&!followUpShortcut&&!followUpScroll&&!commandKey)return;const input=keyInput(event,held);if(!input)return;event.preventDefault();received++;let outcome;
+  const interactive=event.target.closest('button,a,input,textarea,select,[contenteditable="true"],summary'),questionConfirm=interactive?.id==='question-draft'&&['Enter','NumpadEnter'].includes(event.code),questionShortcut=interactive?.id==='question-draft'&&['Digit3','Numpad3'].includes(event.code),followUpConfirm=interactive?.id==='follow-up'&&['Enter','NumpadEnter'].includes(event.code),followUpShortcut=interactive?.id==='follow-up'&&['Digit3','Numpad3'].includes(event.code),followUpScroll=interactive?.id==='follow-up'&&['ArrowLeft','ArrowRight'].includes(event.code),historyShortcut=interactive?.id==='command-input'&&['Digit5','Numpad5'].includes(event.code),commandKey=interactive?.id==='command-input';
+  if(interactive&&interactive.id!=='test-only'&&!questionConfirm&&!questionShortcut&&!followUpConfirm&&!followUpShortcut&&!followUpScroll&&!historyShortcut&&!commandKey)return;const input=keyInput(event,held);if(!input)return;event.preventDefault();received++;let outcome;
   if(input.duplicate){duplicates++;outcome='忽略重复（长按／尚未松开）';}
   else{
     accepted++;const canonical=input.code.replace('Numpad','Digit').replace('DigitEnter','Enter');hits.set(canonical,(hits.get(canonical)||0)+1);const tile=[...$('key-monitor').children].find(el=>el.dataset.code===canonical);
