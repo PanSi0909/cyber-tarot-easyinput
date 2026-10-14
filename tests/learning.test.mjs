@@ -60,6 +60,13 @@ test('学习模式使用独立指令接收区并保持紧凑非悬浮页头',()=
   assert.doesNotMatch(styles,/\.learning-header\{position:sticky/);
 });
 
+test('综合解读后的追问框会从普通输入和系统写入两条路径识别 S6',()=>{
+  const app=readFileSync(new URL('../dist/app.mjs',import.meta.url),'utf8');
+  assert.match(app,/function consumeFollowUpCommand\(field\)/);
+  assert.match(app,/followUpValue!==observedFollowUpValue&&!consumeFollowUpCommand\(followUp\)/);
+  assert.match(app,/\$\('follow-up'\)\.addEventListener\('input',\(\)=>\{if\(consumeFollowUpCommand\(\$\('follow-up'\)\)\)return/);
+});
+
 test('顶部学习模式与使用手册使用相同高度和底线',()=>{
   const styles=readFileSync(new URL('../dist/styles.css',import.meta.url),'utf8');
   assert.match(styles,/\.topbar \.utility-nav\{[^}]*align-items:flex-end/);

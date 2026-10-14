@@ -376,6 +376,12 @@ function consumeLearningCommand(field){
   const match=field.value.match(/(?:S6\s*)?学习\s*模式\s*$/);if(!match)return false;
   field.value=field.value.slice(0,match.index);return receiveFixedText('学习模式');
 }
+function consumeFollowUpCommand(field){
+  if(consumeLearningCommand(field))return true;
+  const value=field.value,normalized=value.replaceAll(/\s/g,'');
+  if(!['综合解读','S4综合解读','历史备份','S5历史备份'].includes(normalized))return false;
+  field.value='';return receiveFixedText(value);
+}
 function routeCommandInput(field=$('command-input')){
   const value=field.value;if(!value)return false;if(receiveFixedText(value))return true;
   if(learning.active){field.value='';if(!learning.detailOpen||learning.confirmed){renderLearning();return false;}learning=learningTransition(learning,{type:'set-draft',value:learning.draft+value},cards.length);saveLearning();renderLearning();$('learning-draft').focus({preventScroll:true});$('learning-status').textContent='S3 语音转写已进入“我的理解”；确认以前仍可修改。';return true;}
@@ -389,7 +395,7 @@ setInterval(()=>{
   const commandValue=$('command-input').value;if(commandValue&&commandValue===observedCommandValue)routeCommandInput($('command-input'));observedCommandValue=$('command-input').value;
   const learningCommandValue=$('learning-command-input').value;if(learningCommandValue&&learningCommandValue===observedLearningCommandValue)routeCommandInput($('learning-command-input'));observedLearningCommandValue=$('learning-command-input').value;
   const learningDraftValue=$('learning-draft').value;if(learning.active&&learning.detailOpen&&!learning.confirmed&&learningDraftValue!==learning.draft)syncLearningDraftField('S3 语音转写已进入“我的理解”；确认以前仍可修改。');
-  const followUpValue=$('follow-up').value;if(state.phase==='revealed'&&readingSession&&followUpValue&&followUpValue!==observedFollowUpValue){readingMode=true;$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';}observedFollowUpValue=followUpValue;
+  const followUp=$('follow-up'),followUpValue=followUp.value;if(state.phase==='revealed'&&readingSession&&followUpValue&&followUpValue!==observedFollowUpValue&&!consumeFollowUpCommand(followUp)){readingMode=true;followUp.focus({preventScroll:true});scrollReadingIntoView(followUp);$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';}observedFollowUpValue=followUp.value;
 },120);
 document.addEventListener('paste',event=>{
   if(!acceptsHardwareCommand()||event.target===$('question-draft'))return;
@@ -407,7 +413,7 @@ function confirmQuestion(source){
 $('confirm-question').addEventListener('click',()=>confirmQuestion('鼠标／触控'));
 $('generate-reading').addEventListener('click',()=>enterReading('鼠标／触控'));
 $('send-follow-up').addEventListener('click',sendFollowUp);
-$('follow-up').addEventListener('input',()=>{if(consumeLearningCommand($('follow-up')))return;const value=$('follow-up').value,normalized=value.replaceAll(/\s/g,'');if(['历史备份','S5历史备份'].includes(normalized)){$('follow-up').value='';receiveFixedText(value);return;}if(readingMode&&value.trim())scrollReadingIntoView($('follow-up'));});
+$('follow-up').addEventListener('input',()=>{if(consumeFollowUpCommand($('follow-up')))return;if(readingMode&&$('follow-up').value.trim())scrollReadingIntoView($('follow-up'));});
 $('history-tool-toggle').addEventListener('click',()=>toggleHistoryTool('鼠标／触控'));
 $('history-export').addEventListener('click',()=>{historyToolIndex=0;renderHistoryTool();exportHistory();});
 $('history-restore').addEventListener('click',()=>{historyToolIndex=1;renderHistoryTool();$('history-import').click();});
