@@ -1,4 +1,4 @@
-import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=0.9.1';
+import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,canReceiveHardwareText,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=1.4.5';
 import {interpretCard,getCardKnowledge} from './tarot-knowledge.mjs?v=0.8.0';
 import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.8.0';
 import {historyRecordSchemaVersion,createHistoryRecord,upsertHistoryRecord,serializeHistoryBackup,restoreHistoryBackup,openHistoryDatabase,listHistoryRecords,saveHistoryRecord,replaceHistoryRecords} from './history.mjs?v=0.9.0';
@@ -19,7 +19,7 @@ try{state=restore(sessionStorage.getItem(storageKey));}catch{}
 try{greetingPlayed=sessionStorage.getItem(greetingKey)==='1';}catch{}
 try{learning=restoreLearning(sessionStorage.getItem(learningStorageKey),cards.length);}catch{}
 
-function acceptsHardwareCommand(){return learning.active||historyToolOpen||['idle','configuring','revealed'].includes(state.phase);}
+function acceptsHardwareCommand(){return learning.active||historyToolOpen||canReceiveHardwareText(state);}
 function userIsEditing(){const active=document.activeElement;return active&&![$('command-input'),$('learning-command-input')].includes(active)&&active.matches('input,textarea,select,[contenteditable="true"]');}
 function commandFocus(){if(!document.hasFocus())return;if(learning.active){const target=learning.detailOpen&&!learning.confirmed?$('learning-draft'):$('learning-command-input');if(document.activeElement!==target)target.focus({preventScroll:true});return;}if(historyToolOpen){$('command-input').focus({preventScroll:true});return;}if(userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
 function saveState(){try{sessionStorage.setItem(storageKey,JSON.stringify(state));}catch{storageAvailable=false;}}
@@ -334,7 +334,7 @@ function dispatch(action,source){
   if(state.phase==='configuring'){setQuestionStatus('idle','按 S2 进入牌阵选择。');commandFocus();}
   else if(state.phase==='spread-selecting'){
     $('stage-message').textContent=`${source} · 旋转选择牌阵，短按确认。`;
-    setTimeout(()=>{$('command-input').blur();document.querySelector('.workspace').scrollIntoView({behavior:'auto',block:'start'});},80);
+    setTimeout(()=>{commandFocus();document.querySelector('.workspace').scrollIntoView({behavior:'auto',block:'start'});},80);
   }
   else if(state.phase==='selecting'&&previous.phase==='spread-selecting'){
     $('stage-message').textContent=`${source} · ${currentSpread().name}已确认，78 张牌已随机洗牌。`;
@@ -402,7 +402,7 @@ $('question-draft').addEventListener('input',()=>{if(consumeLearningCommand($('q
 function confirmQuestion(source){
   const value=$('question-draft').value.trim();if(!value){setQuestionStatus('stopped','还没有问题文字。请先按 S3 说话，或直接输入。');return false;}
   stopRecognition(true);const next=transition(state,{type:'set-question',value});if(next!==state){state=next;saveState();render();}
-  $('stage-message').textContent=`${source} · 问题已确认。现在旋转并短按选择第 1 张牌。`;setQuestionStatus('idle','问题已写入本次占卜。现在旋转选择牌背，再短按旋钮选牌。');document.activeElement?.blur?.();scrollToDeck();return true;
+  $('stage-message').textContent=`${source} · 问题已确认。现在旋转并短按选择第 1 张牌。`;setQuestionStatus('idle','问题已写入本次占卜。现在旋转选择牌背，再短按旋钮选牌。');document.activeElement?.blur?.();commandFocus();scrollToDeck();return true;
 }
 $('confirm-question').addEventListener('click',()=>confirmQuestion('鼠标／触控'));
 $('generate-reading').addEventListener('click',()=>enterReading('鼠标／触控'));

@@ -37,6 +37,10 @@ export function fixedTextAction(value){
   if(normalized.endsWith('牌阵选择')||normalized.endsWith('牌组选择'))return 'setup';
   return normalized.endsWith('开始')?'start':null;
 }
+export function canReceiveHardwareText(state){
+  const phase=state?.phase;
+  return ['idle','configuring','spread-selecting','revealed'].includes(phase)||(phase==='selecting'&&Boolean(state.question));
+}
 export function recognitionFailureMessage(error){return ({
   'not-allowed':'未获得麦克风权限，请改用文字输入。',
   'service-not-allowed':'浏览器已阻止语音识别服务，请改用文字输入。',
