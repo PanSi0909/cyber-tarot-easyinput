@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d8cfba">
+  <meta name="description" content="赛博塔罗的使用手册：操作流程、按键旋钮、牌阵、正逆位、AI 解读、历史备份与学习模式。">
+  <title>使用手册 · 赛博塔罗</title>
+  <link rel="stylesheet" href="design-tokens.css?v=1.4.0">
+  <link rel="stylesheet" href="guide.css?v=1.4.0">
+</head>
+<body>
+  <header class="manual-topbar"><a class="manual-brand" href="index.html"><span>✦</span> BETWEEN SIGNALS</a><a class="back-link" href="index.html">返回占卜台 ←</a></header>
+  <main>
+    <section class="manual-hero">
+      <p class="kicker">USER MANUAL / VOL. 06</p>
+      <h1><span>THE</span><span>MANUAL</span></h1>
+      <div class="manual-intro"><p>操作说明集中在这里。占卜台只显示当前一步真正需要的动作，让问题、牌和选择保持在画面中心。</p><nav aria-label="手册目录"><a href="#start">快速开始</a><a href="#controls">按键与旋钮</a><a href="#spreads">牌阵</a><a href="#cards">牌面</a><a href="#reading">解读与历史</a><a href="#learning">学习模式</a></nav></div>
+    </section>
+
+    <section class="manual-section" id="start">
+      <header><span>01</span><div><p>TURN · STOP · REVEAL</p><h2>快速开始</h2></div></header>
+      <ol class="ritual-steps">
+        <li><b>开始 / 新一轮</b><span>按 S1、数字键 1，或点击开始。</span></li>
+        <li><b>进入牌阵选择</b><span>按 S2、数字键 2，或点击牌阵选择。</span></li>
+        <li><b>选择并确认牌阵</b><span>旋转旋钮浏览，短按旋钮确认。</span></li>
+        <li><b>提问并抽牌</b><span>S3 语音或文字输入；确认后旋转并短按抽牌。</span></li>
+        <li><b>综合解读</b><span>按 S4 或点击按钮，生成零费用的本地模拟解读。</span></li>
+        <li><b>浏览与追问</b><span>旋钮滚动长内容；S3 输入追问，短按发送。</span></li>
+        <li><b>历史备份</b><span>按 S5 打开备份工具，保存或恢复历史。</span></li>
+        <li><b>学习模式</b><span>随时按 S6 进入；再次按 S6 返回原占卜页面。</span></li>
+      </ol>
+    </section>
+
+    <section class="manual-section" id="controls">
+      <header><span>02</span><div><p>ONE ACTION · THREE INPUTS</p><h2>按键与旋钮</h2></div></header>
+      <div class="control-table" role="table" aria-label="按键与网页动作对应关系">
+        <div class="control-row control-head" role="row"><b>入口</b><b>键盘</b><b>网页动作</b></div>
+        <div class="control-row" role="row"><strong>S1 开始</strong><span>Digit1 / Numpad1</span><span>开始本轮或开启新一轮</span></div>
+        <div class="control-row" role="row"><strong>S2 牌阵选择</strong><span>Digit2 / Numpad2</span><span>进入牌阵选择</span></div>
+        <div class="control-row" role="row"><strong>S3 语音</strong><span>文字框 / 浏览器聆听</span><span>输入原问题或追问</span></div>
+        <div class="control-row" role="row"><strong>S4 综合解读</strong><span>Digit4 / Numpad4</span><span>生成并进入综合解读</span></div>
+        <div class="control-row" role="row"><strong>S5 历史备份</strong><span>Digit5 / Numpad5</span><span>打开或关闭备份工具</span></div>
+        <div class="control-row" role="row"><strong>S6 学习模式</strong><span>Digit6 / Numpad6</span><span>进入或退出学习模式</span></div>
+        <div class="control-row" role="row"><strong>旋钮左右</strong><span>← / →</span><span>选择牌阵、牌背或结果牌</span></div>
+        <div class="control-row" role="row"><strong>旋钮短按</strong><span>Enter</span><span>确认当前选择；每次只执行一次</span></div>
+      </div>
+      <p class="manual-note">网页不会虚假显示开发板连接状态。普通键盘、鼠标、触摸和开发板最终调用同一套动作逻辑。</p>
+    </section>
+
+    <section class="manual-section" id="spreads">
+      <header><span>03</span><div><p>CHOOSE A STRUCTURE</p><h2>四种牌阵</h2></div></header>
+      <div class="spread-guide">
+        <article><small>1 CARD</small><h3>单卡指引</h3><p>提取一个核心信号，适合每日一抽或聚焦当前最重要的问题。</p></article>
+        <article><small>3 CARDS</small><h3>时间之流</h3><p>过去、现在、未来。观察一件事如何形成、正在发生什么，以及可能走向哪里。</p></article>
+        <article><small>5 CARDS</small><h3>命运抉择</h3><p>比较两条路径：第1张是现状；第2、3张是路径A及其结果；第4、5张是路径B及其结果。五个位置依次为：现状、路径A、路径A结果、路径B、路径B结果。</p></article>
+        <article><small>10 CARDS</small><h3>凯尔特十字</h3><p>完整展开现状、挑战、根基、过去、可能、未来、自我、环境、希望与恐惧以及结果。</p></article>
+      </div>
+    </section>
+
+    <section class="manual-section" id="cards">
+      <header><span>04</span><div><p>FACE · BACK · ORIENTATION</p><h2>牌面与正逆位</h2></div></header>
+      <div class="reading-grid"><div><h3>未抽取</h3><p>所有候选牌显示同一张牌背，不透露身份；当前候选会抬升并出现旧金色聚焦框。</p></div><div><h3>抽中后</h3><p>牌面显示名称、英文名或编号、视觉主体和关键词。数字小阿卡纳会按牌值显示相同数量的权杖、圣杯、宝剑或星币。</p></div><div><h3>逆位</h3><p>插画主体和数字牌点旋转 180°，但名称、编号、关键词与“逆位”标签保持正向，避免阅读扭曲。</p></div></div>
+    </section>
+
+    <section class="manual-section" id="reading">
+      <header><span>05</span><div><p>INTERPRET · ASK · KEEP</p><h2>解读、追问与历史</h2></div></header>
+      <div class="reading-grid"><div><h3>综合解读</h3><p>解读只读取已锁定的问题、牌阵位置、卡牌和正逆位，不会重新洗牌或改变结果。默认使用本地知识和模拟接口，不产生真实模型费用。</p></div><div><h3>继续追问</h3><p>综合解读完成后，可继续输入文字或用 S3 语音追问；追问沿用同一占卜会话。</p></div><div><h3>备份与恢复</h3><p>历史保存在当前浏览器。S5 可以下载全部历史，或从以前的 JSON 备份中合并恢复。</p></div></div>
+    </section>
+
+    <section class="manual-section learning-section" id="learning">
+      <header><span>06</span><div><p>STUDY THE SYMBOLS</p><h2>学习模式</h2></div></header>
+      <p class="status-chip">已启用 · 本地知识 · 零模型费用</p>
+      <div class="learning-layout"><div><h3>自由浏览 78 张牌</h3><p>S6 进入学习模式，旋钮左右循环浏览完整牌组，短按只打开当前牌；再次按 S6 返回进入前的占卜状态。</p></div><div><h3>先写自己的理解</h3><p>先观察视觉线索，再用普通文字或 S3 语音转写输入自己的理解。确认前不显示参考答案；确认后显示相近理解、遗漏线索、正逆位差异和反思问题。</p></div><div><h3>刷新与隔离</h3><p>刷新后恢复学习模式、当前牌和详情是否打开；未确认草稿与对照结果会清除。原占卜的问题、牌阵、卡牌、AI 解读和追问使用原有存储，学习模式不会覆盖它们。</p></div></div>
+    </section>
+  </main>
+  <footer><span>BETWEEN SIGNALS · USER MANUAL</span><a href="index.html">返回占卜台</a></footer>
+</body>
+</html>

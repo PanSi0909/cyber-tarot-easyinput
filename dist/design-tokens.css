@@ -1,0 +1,45 @@
+:root {
+  --ritual-bg: #070b0f;
+  --ritual-obsidian: #0d1315;
+  --ritual-surface: #111a1c;
+  --archive-paper: #dfcfad;
+  --archive-paper-deep: #bda67a;
+  --paper-ink: #171612;
+  --ink: #171612;
+  --text-primary: #eee5d4;
+  --text-secondary: #aaa99f;
+  --teal: #628f88;
+  --teal-bright: #8fc4ba;
+  --gold: #c7a466;
+  --gold-soft: #e0c28a;
+  --rust: #a85f48;
+  --success: #79ae8e;
+  --warning: #d4a85c;
+  --danger: #d87878;
+  --focus: #9ad6ca;
+
+  --font-display: "Noto Serif SC", "Songti SC", "STSong", serif;
+  --font-body: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 3px;
+  --radius-md: 7px;
+  --radius-card: 10px;
+  --line-subtle: #c7a46633;
+  --line-strong: #c7a46688;
+  --shadow-card: 0 22px 50px #000a;
+  --shadow-focus: 0 0 0 3px #8fc4ba24, 0 28px 60px #000c;
+
+  --motion-fast: 140ms;
+  --motion-medium: 320ms;
+  --motion-reveal: 560ms;
+  --ease-ritual: cubic-bezier(.2, .72, .24, 1);
+}

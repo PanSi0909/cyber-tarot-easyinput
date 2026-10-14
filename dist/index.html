@@ -3,18 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0a1018">
+  <meta name="theme-color" content="#070b0f">
   <meta name="description" content="用实体按键、旋钮和语音问题完成牌阵，生成可追问的结构化 AI 解读，并自动保存完整占卜历史。">
   <title>赛博塔罗 · Between Signals</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a1018'/%3E%3Cpath d='M16 4 20 12 28 16 20 20 16 28 12 20 4 16 12 12Z' fill='%23b5eadf'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=0.9.2">
-  <script type="module" src="app.mjs?v=0.9.2"></script>
+  <link rel="stylesheet" href="design-tokens.css?v=1.4.0">
+  <script>if(location.protocol==='file:')location.replace('http://127.0.0.1:4173/');</script>
+  <link rel="stylesheet" href="styles.css?v=1.4.4">
+  <script type="module" src="app.mjs?v=1.4.4"></script>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✧</span> 赛博塔罗 <span class="brand-en">BETWEEN SIGNALS</span></a><span class="edition">流程与记录 / 05</span></header>
+  <header class="topbar"><span class="edition">SHANGHAI · CN</span><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✦</span> BETWEEN SIGNALS <span class="brand-en">赛博塔罗</span></a><nav class="utility-nav" aria-label="辅助导航"><button id="learning-toggle" type="button" aria-pressed="false">学习模式 <kbd>S6</kbd></button><a href="guide.html">使用手册 ↗</a><span class="issue-mark">VOL. 06 / 2026</span></nav></header>
   <main>
-    <section class="intro"><div><p class="eyebrow">A MOMENT FOR YOURSELF</p><h1>让直觉，落在指尖。</h1><p class="intro-copy">想一件此刻在意的事。转动、停下，翻开属于这一刻的牌。</p></div><button class="quiet" id="show-input" aria-expanded="false" aria-controls="input-panel">输入验证 <span aria-hidden="true">↗</span></button></section>
+    <section class="intro">
+      <div class="hero-copy"><p class="eyebrow">A PRIVATE RITUAL / ISSUE NO. 06</p><h1><span>让直觉</span><em>落在指尖</em></h1><p class="intro-copy">想一件此刻在意的事。转动、停下，翻开属于这一刻的牌。</p></div>
+      <div class="hero-cards" aria-hidden="true"><span class="hero-card hero-card-back"></span><span class="hero-card hero-card-face"><i>XXI</i><b>世界</b></span><span class="hero-seal">78<br><small>CARDS</small></span></div>
+    </section>
     <input id="command-input" class="command-sink" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="EasyInput 指令接收" autofocus>
+    <section class="ritual-layout" aria-label="本次占卜操作区">
     <section class="question-bar" aria-label="本次占卜问题">
       <div class="question-copy"><p class="eyebrow">ASK BEFORE YOU DRAW</p><h2>把问题说出来，也可以输入。</h2><p id="current-setup">完整牌组尚未展开。</p><p id="current-question">尚未确认问题。语音输入文字只有确认后才会进入本次占卜。</p></div>
       <div class="question-entry">
@@ -30,11 +36,13 @@
         <div class="ritual-heading"><h2 id="stage-title">先留一点空白</h2><p id="stage-hint">按下开始，进入这次占卜。</p></div>
         <div id="spread-picker" class="spread-picker" role="listbox" aria-label="选择牌阵" hidden></div>
         <div id="deck" class="deck" role="group" aria-label="随机牌组中的当前待选牌" hidden></div>
-        <div class="stage-controls"><button class="arrow" id="previous" aria-label="选择上一张牌" disabled>←</button><span id="selection-label">等待开始</span><button class="arrow" id="next" aria-label="选择下一张牌" disabled>→</button></div>
+        <div class="stage-controls"><button class="arrow" id="previous" aria-label="选择上一张牌" disabled>←</button><span class="knob-dial" aria-hidden="true"></span><span id="selection-label">等待开始</span><button class="arrow" id="next" aria-label="选择下一张牌" disabled>→</button></div>
+        <div class="control-context" aria-live="polite"><span id="knob-context">旋钮待机</span><strong id="press-context">按 S1 开始</strong></div>
         <button class="primary" id="main-action"><span id="main-label">开始抽卡</span><kbd id="main-key">1</kbd></button>
         <p class="stage-message" id="stage-message" role="status" aria-live="polite">鼠标、电脑键盘或 EasyInput，任选一种开始。</p>
         <p class="greeting-status" id="greeting-status" role="status" aria-live="polite">首次按 S1、数字键 1 或点击开始时，会由这次操作播放一次启动语。</p>
       </div>
+    </section>
     </section>
     <section id="result-overlay" class="result-overlay" hidden aria-label="抽牌结果" aria-live="polite">
       <div class="result-panel">
@@ -53,7 +61,6 @@
         </section>
       </div>
     </section>
-    <section class="control-strip" aria-label="操作提示"><div><span class="step-num">01</span><p><strong>开始 / 新一轮</strong><span><kbd>开始</kbd> · S1</span></p></div><div><span class="step-num">02</span><p><strong>进入牌阵选择</strong><span><kbd>牌阵选择</kbd> · S2</span></p></div><div><span class="step-num">03</span><p><strong>选择并确认牌阵</strong><span>旋转 · 短按旋钮</span></p></div><div><span class="step-num">04</span><p><strong>提问并抽牌</strong><span>S3 说话 · 旋转 · 短按</span></p></div><div><span class="step-num">05</span><p><strong>综合解读</strong><span><kbd>综合解读</kbd> · S4</span></p></div><div><span class="step-num">06</span><p><strong>浏览与追问</strong><span>旋钮滚动 · S3 追问</span></p></div><div><span class="step-num">07</span><p><strong>历史备份</strong><span><kbd>历史备份</kbd> · S5</span></p></div></section>
     <section class="history-panel" aria-labelledby="history-heading">
       <div class="history-header">
         <div><p class="eyebrow">SESSION ARCHIVE</p><h2 id="history-heading">占卜历史</h2><p>首次综合解读成功后自动保存；后续追问会更新同一条记录。</p></div>
@@ -84,13 +91,53 @@
     </section>
     <section id="input-panel" class="input-panel" hidden aria-labelledby="input-title">
       <div class="input-header"><div><p class="eyebrow">INPUT CHECK</p><h2 id="input-title">看看网页收到了什么</h2></div><label class="test-toggle"><input type="checkbox" id="test-only"> 仅测试输入，不操作牌组</label></div>
-      <p>这里仅用于调试按键，不是正常操作入口。S1、S2、S4、S5 的固定文字与备用数字键都会执行同一个网页动作；左右方向和回车用于旋钮。</p>
+      <p>这里仅用于调试按键，不是正常操作入口。S1 至 S6 的固定文字与备用数字键都会执行同一个网页动作；左右方向和回车用于旋钮。</p>
       <div id="key-monitor" class="key-monitor"></div>
       <div class="input-summary"><span id="focus-status">页面可接收输入</span><span id="input-counts">收到 0 次 · 接受 0 次 · 忽略重复 0 次</span><button id="clear-log" class="quiet">清空记录</button></div>
       <ol id="event-log" class="event-log" aria-label="最近输入记录"><li class="log-empty">还没有输入记录</li></ol>
-      <details><summary>当前 EasyInput 配置边界</summary><ol class="setup-list"><li>S1 触发开始，S2 进入牌阵选择，S4 固定文字“综合解读”直达完整解读，S5 固定文字“历史备份”打开或关闭备份工具。</li><li>旋钮选择 1/3/5/10 张牌阵并短按确认；进入综合解读后，旋钮改为上下滚动；备份工具打开时，旋钮选择保存或恢复并短按确认。</li><li>S3 抽牌前输入原问题，综合解读生成后输入追问；两个阶段互不冲突。</li><li>牌组每轮随机洗牌；页面只呈现当前附近的牌，但旋钮可循环到完整 78 张。</li></ol><p>本项目不会替你操作 EasyInput App，也不需要 BOOT、烧录或复位。</p></details>
+      <details><summary>当前 EasyInput 配置边界</summary><ol class="setup-list"><li>S1 触发开始，S2 进入牌阵选择，S4 固定文字“综合解读”直达完整解读，S5 固定文字“历史备份”打开或关闭备份工具，网页新增兼容 S6 固定文字“学习模式”。</li><li>旋钮选择 1/3/5/10 张牌阵并短按确认；综合解读中用于滚动；历史工具中用于选择保存或恢复；学习模式中用于循环浏览 78 张并打开当前牌。</li><li>S3 在抽牌前输入原问题、综合解读后输入追问、学习模式中输入自己的理解，三个阶段互不冲突。</li><li>牌组每轮随机洗牌；学习模式按标准顺序独立浏览，不会修改当前占卜牌组。</li></ol><p>本项目不会替你操作 EasyInput App，也不需要 BOOT、烧录或复位。</p></details>
     </section>
   </main>
-    <footer><span>BETWEEN SIGNALS</span><span>把问题留给自己，把这一刻留在这里。</span><span>第 5 课 · V0.9.2</span></footer>
+  <section id="learning-overlay" class="learning-overlay" hidden aria-labelledby="learning-heading">
+    <input id="learning-command-input" class="command-sink" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="学习模式 EasyInput 指令接收">
+    <header class="learning-header">
+      <div><p class="eyebrow">THE CARD ARCHIVE / 78</p><h1 id="learning-heading">学习模式</h1><p>先观察，再写下自己的理解。确认以前，参考牌义不会出现。</p></div>
+      <button id="learning-exit" class="learning-exit" type="button">返回占卜 <kbd>S6</kbd></button>
+    </header>
+    <div class="learning-layout">
+      <section class="learning-browser" aria-label="浏览塔罗牌">
+        <div class="learning-index"><span id="learning-count">01 / 78</span><span id="learning-family">大阿尔卡纳</span></div>
+        <div id="learning-card" class="learning-card result-card"></div>
+        <div class="learning-controls">
+          <button id="learning-previous" class="arrow" type="button" aria-label="上一张牌">←</button>
+          <span class="knob-dial" aria-hidden="true"></span>
+          <button id="learning-next" class="arrow" type="button" aria-label="下一张牌">→</button>
+        </div>
+        <p id="learning-knob-context" class="learning-knob-context">旋钮左右 · 循环浏览 78 张牌</p>
+        <button id="learning-open" class="primary" type="button">打开当前牌 <kbd>短按</kbd></button>
+      </section>
+      <article class="learning-detail" aria-live="polite">
+        <p class="eyebrow">LOOK · NAME · INTERPRET</p>
+        <h2 id="learning-card-name">愚者</h2>
+        <p id="learning-card-en" class="learning-card-en">THE FOOL</p>
+        <div id="learning-locked" class="learning-locked"><span>01</span><p>短按旋钮或点击“打开当前牌”，开始观察。</p></div>
+        <div id="learning-exercise" hidden>
+          <section class="learning-observe"><h3>先观察牌面</h3><p>留意人物、方向、物件、数量、远近与颜色。此处暂不展示参考答案。</p></section>
+          <label for="learning-draft">我的理解</label>
+          <textarea id="learning-draft" maxlength="500" rows="6" placeholder="写下你看到的视觉线索、感受到的主题，以及它在正位或逆位时可能有什么不同。也可以按 S3 输入语音转写。"></textarea>
+          <p id="learning-status" class="learning-status" role="status">可以继续修改；确认后才显示参考解读。</p>
+          <div class="learning-actions"><button id="learning-clear" class="quiet" type="button">清空</button><button id="learning-submit" class="primary" type="button">确认并查看对照</button></div>
+          <section id="learning-reference" class="learning-reference" hidden>
+            <p class="eyebrow">REFERENCE / LOCAL KNOWLEDGE</p>
+            <h3>参考解读</h3>
+            <dl class="learning-meanings"><div><dt>视觉线索</dt><dd><ul id="learning-visuals"></ul></dd></div><div><dt>基础牌义</dt><dd id="learning-base"></dd></div><div><dt>正位</dt><dd id="learning-upright"></dd></div><div><dt>逆位</dt><dd id="learning-reversed"></dd></div><div><dt>反思问题</dt><dd id="learning-reflection"></dd></div></dl>
+            <div class="learning-comparison"><h3>与你的理解对照</h3><section><h4>相近之处</h4><p id="learning-similar"></p></section><section><h4>可能忽略的视觉线索</h4><ul id="learning-missed"></ul></section><section><h4>正逆位差异</h4><p id="learning-orientation-difference"></p></section><section><h4>继续思考</h4><p id="learning-next-question"></p></section></div>
+          </section>
+        </div>
+      </article>
+    </div>
+    <footer class="learning-footer"><span>S6 退出并返回进入前的占卜页面</span><span>S3 输入 · 旋钮浏览 · 短按打开</span><span>本地知识 · 零模型费用</span></footer>
+  </section>
+    <footer><span>BETWEEN SIGNALS</span><span class="footer-motto">把问题留给自己，把这一刻留在这里。</span><div class="footer-actions"><button id="show-input" class="footer-tool" aria-expanded="false" aria-controls="input-panel">输入验证</button><a href="guide.html">使用手册</a><span>第 6 课 · V1.4.4</span></div></footer>
 </body>
 </html>

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "project": "cyber-tarot-card-art-v2",
+  "status": "deferred",
+  "productionEnabled": false,
+  "defaultCardStatus": "pending",
+  "summary": {
+    "total": 78,
+    "pilot": 8,
+    "pending": 70
+  },
+  "finalFrameRequirements": {
+    "topNumber": false,
+    "topOrientationBadge": false,
+    "bottomChineseName": false,
+    "bottomKeywords": false,
+    "bottomEnglishName": true,
+    "englishNameSize": "large",
+    "reversedArtworkTransform": "rotate(180deg)",
+    "captionTransform": "none"
+  },
+  "pilotCards": [
+    {"id":"major-fool","status":"needs-layout-review","asset":"dist/assets/course-6/cards/major-fool.jpg"},
+    {"id":"major-death","status":"needs-layout-review","asset":"dist/assets/course-6/cards/major-death.jpg"},
+    {"id":"wands-three","status":"needs-layout-review","asset":"dist/assets/course-6/cards/wands-three.jpg"},
+    {"id":"cups-seven","status":"needs-layout-review","asset":"dist/assets/course-6/cards/cups-seven.jpg"},
+    {"id":"swords-three","status":"needs-layout-review","asset":"dist/assets/course-6/cards/swords-three.jpg"},
+    {"id":"pentacles-ten","status":"needs-layout-review","asset":"dist/assets/course-6/cards/pentacles-ten.jpg"},
+    {"id":"cups-knight","status":"needs-layout-review","asset":"dist/assets/course-6/cards/cups-knight.jpg"},
+    {"id":"pentacles-queen","status":"needs-layout-review","asset":"dist/assets/course-6/cards/pentacles-queen.jpg"}
+  ],
+  "catalog": {
+    "major": ["major-fool","major-magician","major-high-priestess","major-empress","major-emperor","major-hierophant","major-lovers","major-chariot","major-strength","major-hermit","major-wheel","major-justice","major-hanged-man","major-death","major-temperance","major-devil","major-tower","major-star","major-moon","major-sun","major-judgement","major-world"],
+    "wands": ["wands-ace","wands-two","wands-three","wands-four","wands-five","wands-six","wands-seven","wands-eight","wands-nine","wands-ten","wands-page","wands-knight","wands-queen","wands-king"],
+    "cups": ["cups-ace","cups-two","cups-three","cups-four","cups-five","cups-six","cups-seven","cups-eight","cups-nine","cups-ten","cups-page","cups-knight","cups-queen","cups-king"],
+    "swords": ["swords-ace","swords-two","swords-three","swords-four","swords-five","swords-six","swords-seven","swords-eight","swords-nine","swords-ten","swords-page","swords-knight","swords-queen","swords-king"],
+    "pentacles": ["pentacles-ace","pentacles-two","pentacles-three","pentacles-four","pentacles-five","pentacles-six","pentacles-seven","pentacles-eight","pentacles-nine","pentacles-ten","pentacles-page","pentacles-knight","pentacles-queen","pentacles-king"]
+  }
+}

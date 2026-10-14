@@ -1,9 +1,11 @@
 import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=0.9.1';
-import {interpretCard} from './tarot-knowledge.mjs?v=0.8.0';
+import {interpretCard,getCardKnowledge} from './tarot-knowledge.mjs?v=0.8.0';
 import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.8.0';
 import {historyRecordSchemaVersion,createHistoryRecord,upsertHistoryRecord,serializeHistoryBackup,restoreHistoryBackup,openHistoryDatabase,listHistoryRecords,saveHistoryRecord,replaceHistoryRecords} from './history.mjs?v=0.9.0';
+import {renderCardBack,renderCardFace} from './card-visuals.mjs?v=1.4.0';
+import {freshLearning,restoreLearning,serializeLearning,learningTransition,compareLearningInterpretation} from './learning.mjs?v=1.0.0';
 const $=id=>document.getElementById(id);
-const storageKey='cyber-tarot.v1',greetingKey='cyber-tarot.greeting.v1',readingStorageKey='cyber-tarot.reading.v1';
+const storageKey='cyber-tarot.v1',greetingKey='cyber-tarot.greeting.v1',readingStorageKey='cyber-tarot.reading.v1',learningStorageKey='cyber-tarot.learning.v1';
 const held=new Set(),hits=new Map(),timers=new Map();
 const readingProvider=new URLSearchParams(location.search).get('provider')==='api'?apiReadingProvider:mockReadingProvider;
 let state=fresh(),greetingPlayed=false,storageAvailable=true,received=0,accepted=0,duplicates=0,logs=[];
@@ -11,14 +13,17 @@ let recognition=null,questionStatus='idle',resultFocus=0;
 let readingSession=null,readingStatus='idle',readingError='',readingMode=false;
 let historyDatabase=null,historyRecords=[],historyStatus='loading',historyMessage='正在读取本机历史记录…',historyLoaded=false,historyPendingRecord=null,historyPendingRecords=null,historyPendingImportCount=0,historyRetryAction='load',selectedHistoryId=null,historySaveQueue=Promise.resolve();
 let historyToolOpen=false,historyToolIndex=0,readingScrollBeforeHistory=0;
+let learning=freshLearning(),learningActionIndex=1;
 let deckMotionTimer=null;
 try{state=restore(sessionStorage.getItem(storageKey));}catch{}
 try{greetingPlayed=sessionStorage.getItem(greetingKey)==='1';}catch{}
+try{learning=restoreLearning(sessionStorage.getItem(learningStorageKey),cards.length);}catch{}
 
-function acceptsHardwareCommand(){return historyToolOpen||['idle','configuring','revealed'].includes(state.phase);}
-function userIsEditing(){const active=document.activeElement;return active&&active!==$('command-input')&&active.matches('input,textarea,select,[contenteditable="true"]');}
-function commandFocus(){if(!document.hasFocus())return;if(historyToolOpen){$('command-input').focus({preventScroll:true});return;}if(userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
+function acceptsHardwareCommand(){return learning.active||historyToolOpen||['idle','configuring','revealed'].includes(state.phase);}
+function userIsEditing(){const active=document.activeElement;return active&&![$('command-input'),$('learning-command-input')].includes(active)&&active.matches('input,textarea,select,[contenteditable="true"]');}
+function commandFocus(){if(!document.hasFocus())return;if(learning.active){const target=learning.detailOpen&&!learning.confirmed?$('learning-draft'):$('learning-command-input');if(document.activeElement!==target)target.focus({preventScroll:true});return;}if(historyToolOpen){$('command-input').focus({preventScroll:true});return;}if(userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
 function saveState(){try{sessionStorage.setItem(storageKey,JSON.stringify(state));}catch{storageAvailable=false;}}
+function saveLearning(){try{sessionStorage.setItem(learningStorageKey,serializeLearning(learning));}catch{storageAvailable=false;}}
 function currentSpread(){return spreads.find(spread=>spread.id===state.spreadChoice);}
 function updateQuestionControls(){
   const enabled=state.phase==='selecting',hasDraft=Boolean($('question-draft').value.trim());
@@ -68,7 +73,10 @@ function renderSpreadPicker(){
     const button=document.createElement('button');button.type='button';button.className='spread-option';button.setAttribute('role','option');
     button.classList.toggle('selected',index===state.spreadIndex);button.setAttribute('aria-selected',String(index===state.spreadIndex));
     const diagram=document.createElement('span');diagram.className=`spread-diagram spread-${spread.count}`;
-    for(let i=0;i<spread.count;i++)diagram.append(document.createElement('i'));
+    for(let i=0;i<spread.count;i++){
+      const marker=document.createElement('i');
+      diagram.append(marker);
+    }
     button.append(diagram);button.insertAdjacentHTML('beforeend',`<span class="spread-copy"><small>SPREAD / ${spread.count} · ${spread.en}</small><strong>${spread.name}</strong><span>${spread.description}</span></span>`);
     button.addEventListener('click',()=>dispatch(index,'鼠标／触控'));return button;
   }));
@@ -83,7 +91,7 @@ function renderDeck(){
   const nodes=nearbyCards().map(({deckIndex,offset})=>{
     const button=document.createElement('button');button.type='button';button.className='tarot-card';button.classList.toggle('selected',offset===0);
     button.style.setProperty('--offset',String(offset));button.style.setProperty('--distance',String(Math.abs(offset)));button.style.setProperty('--wave-right-order',String(offset+3));button.style.setProperty('--wave-left-order',String(3-offset));
-    button.innerHTML='<span class="card-symbol" aria-hidden="true">✦</span>';
+    button.innerHTML=renderCardBack();
     const relativeLabel=offset===0?'当前牌背':offset<0?`左侧第 ${Math.abs(offset)} 张牌背`:`右侧第 ${offset} 张牌背`;
     button.setAttribute('aria-label',`选择${relativeLabel}`);button.setAttribute('aria-pressed',String(offset===0));button.addEventListener('click',()=>dispatch(deckIndex,'鼠标／触控'));return button;
   });$('deck').replaceChildren(...nodes);
@@ -107,7 +115,7 @@ function renderResultDetail(){
 function renderResult(){
   if(state.phase!=='revealed')return;const spread=currentSpread();resultFocus=Math.min(resultFocus,state.results.length-1);
   $('result-spread-name').textContent=spread.name;$('result-spread').className=`result-spread spread-layout-${spread.count}`;const labels=spreadPositions[spread.id]||[];
-  const nodes=state.results.map((id,index)=>{const card=cards.find(item=>item.id===id),orientation=cardOrientation(state,id),button=document.createElement('button');button.type='button';button.className='result-card';button.classList.toggle('reversed',orientation==='reversed');button.dataset.family=card.category;button.innerHTML=`<small>${String(index+1).padStart(2,'0')} · ${labels[index]||''} · ${orientation==='reversed'?'逆位':'正位'}</small><b>${card.symbol}</b><strong>${card.name}</strong>`;button.setAttribute('aria-label',`查看第 ${index+1} 张：${card.name}${orientation==='reversed'?'逆位':'正位'}`);button.addEventListener('click',()=>{resultFocus=index;renderResultDetail();});return button;});
+  const nodes=state.results.map((id,index)=>{const card=cards.find(item=>item.id===id),orientation=cardOrientation(state,id),button=document.createElement('button');button.type='button';button.className='result-card';button.classList.toggle('reversed',orientation==='reversed');button.dataset.family=card.category;button.style.setProperty('--reveal-index',String(index));button.innerHTML=`<small class="result-card-position">${String(index+1).padStart(2,'0')} · ${labels[index]||''}</small>${renderCardFace(card,orientation)}`;button.setAttribute('aria-label',`查看第 ${index+1} 张：${card.name}${orientation==='reversed'?'逆位':'正位'}`);button.addEventListener('click',()=>{resultFocus=index;renderResultDetail();});return button;});
   $('result-spread').replaceChildren(...nodes);renderResultDetail();
 }
 function currentReadingInput(){return buildReadingInput(state);}
@@ -227,6 +235,81 @@ async function sendFollowUp(){
     readingSession=appendFollowUp(session,turn);readingStatus='ready';$('follow-up').value='';$('follow-up').blur();saveReadingSession();renderReading();void archiveCurrentSession();commandFocus();scrollReadingIntoView($('follow-up-history'));return true;
   }catch(error){readingStatus='ready';renderReading();$('ai-reading-status').textContent=`追问失败：${error?.message||'接口暂时不可用'}。可保留问题后重试。`;return false;}
 }
+function learningCard(){return cards[learning.index]||cards[0];}
+function learningList(id,items){$(id).replaceChildren(...items.map(text=>{const item=document.createElement('li');item.textContent=text;return item;}));}
+function renderLearningActionSelection(){
+  const available=learning.detailOpen&&!learning.confirmed&&Boolean(learning.draft.trim()),buttons=[$('learning-clear'),$('learning-submit')];
+  buttons.forEach((button,index)=>{const selected=available&&index===learningActionIndex;button.classList.toggle('selected',selected);button.setAttribute('aria-current',selected?'true':'false');});
+}
+function syncLearningDraftField(message=''){
+  if(!learning.active||!learning.detailOpen||learning.confirmed)return false;
+  const field=$('learning-draft'),value=field.value.slice(0,500),changed=value!==learning.draft;
+  if(changed){learning=learningTransition(learning,{type:'set-draft',value},cards.length);learningActionIndex=1;saveLearning();$('learning-clear').disabled=!learning.draft;$('learning-submit').disabled=!learning.draft.trim();renderLearningActionSelection();$('learning-knob-context').textContent=learning.draft.trim()?'旋钮左右 · 选择清空或确认；短按执行':'旋钮左右 · 换牌并重新观察';}
+  if(message&&changed)$('learning-status').textContent=message;
+  return changed;
+}
+function settleLearningDraft(){
+  if(!learning.active||!learning.detailOpen||learning.confirmed||!document.hasFocus())return false;
+  const field=$('learning-draft');syncLearningDraftField('S3 语音转写已进入“我的理解”；确认以前仍可修改。');field.value=learning.draft;field.focus({preventScroll:true});field.setSelectionRange(field.value.length,field.value.length);field.scrollTop=field.scrollHeight;return true;
+}
+function restoreLearningDraftAfterExternalInput(){
+  commandFocus();if(!learning.active)return;
+  settleLearningDraft();setTimeout(settleLearningDraft,80);setTimeout(settleLearningDraft,240);
+}
+function renderLearning(){
+  const card=learningCard(),knowledge=getCardKnowledge(card),open=learning.detailOpen,confirmed=learning.confirmed;
+  $('learning-overlay').hidden=!learning.active;$('learning-toggle').setAttribute('aria-pressed',String(learning.active));
+  document.body.classList.toggle('learning-active',learning.active);document.querySelector('main').inert=learning.active;document.querySelector('body>footer').inert=learning.active;
+  if(!learning.active)return;
+  $('learning-count').textContent=`${String(learning.index+1).padStart(2,'0')} / ${cards.length}`;$('learning-family').textContent=card.category;
+  $('learning-card').dataset.family=card.category;$('learning-card').innerHTML=renderCardFace(card);
+  $('learning-card-name').textContent=card.name;$('learning-card-en').textContent=card.en;$('learning-locked').hidden=open;$('learning-exercise').hidden=!open;
+  $('learning-open').disabled=open;$('learning-open').innerHTML=open?'当前牌已打开 <kbd>短按</kbd>':'打开当前牌 <kbd>短按</kbd>';
+  $('learning-draft').value=learning.draft;$('learning-draft').disabled=confirmed;$('learning-clear').disabled=confirmed||!learning.draft;$('learning-submit').disabled=confirmed||!learning.draft.trim();renderLearningActionSelection();
+  $('learning-reference').hidden=!confirmed;$('learning-status').textContent=confirmed?'已确认。本页对照来自本地塔罗知识，不会调用付费模型。':'可以继续修改；确认后才显示参考解读。';
+  $('learning-knob-context').textContent=open&&learning.draft.trim()?'旋钮左右 · 选择清空或确认；短按执行':open?'旋钮左右 · 换牌并重新观察':'旋钮左右 · 循环浏览 78 张牌';
+  if(!confirmed)return;
+  const comparison=compareLearningInterpretation(learning.draft,card,knowledge);
+  learningList('learning-visuals',knowledge.visuals);$('learning-base').textContent=`${knowledge.archetype} · ${knowledge.element}元素 · ${knowledge.domain}`;
+  $('learning-upright').textContent=knowledge.upright;$('learning-reversed').textContent=knowledge.reversed;$('learning-reflection').textContent=knowledge.reflection;
+  $('learning-similar').textContent=comparison.similar;learningList('learning-missed',comparison.missedVisuals);$('learning-orientation-difference').textContent=comparison.orientationDifference;$('learning-next-question').textContent=comparison.nextQuestion;
+}
+function toggleLearning(source){
+  const exiting=learning.active,returnScroll=learning.returnScroll;
+  if(!exiting)learning={...learning,returnScroll:window.scrollY};
+  stopRecognition(true);learning=learningTransition(learning,'toggle',cards.length);saveLearning();renderLearning();
+  if(exiting){requestAnimationFrame(()=>{window.scrollTo({top:returnScroll,behavior:'auto'});commandFocus();});}
+  else requestAnimationFrame(()=>{commandFocus();$('learning-card').scrollIntoView({behavior:'auto',block:'center'});});
+  return true;
+}
+function focusLearningDraft(source){
+  if(!learning.detailOpen){$('learning-status').textContent=`${source} · 先短按旋钮打开当前牌，再输入自己的理解。`;return false;}
+  if(learning.confirmed){$('learning-status').textContent='本张对照已经确认；旋转到下一张牌可开始新的练习。';return false;}
+  settleLearningDraft();$('learning-status').textContent=`${source} · 输入已定位到“我的理解”；确认以前仍可修改。`;return true;
+}
+function performLearningAction(action,source){
+  if(action==='question')return focusLearningDraft(source);
+  if(learning.detailOpen&&!learning.confirmed&&learning.draft.trim()&&['left','right'].includes(action)){
+    learningActionIndex=action==='left'?0:1;renderLearningActionSelection();$('learning-knob-context').textContent=`已选择“${learningActionIndex===0?'清空':'确认并查看对照'}” · 短按旋钮执行`;$('learning-status').textContent=`${source} · 当前操作：${learningActionIndex===0?'清空草稿':'确认并查看对照'}。`;return true;
+  }
+  if(action==='confirm'&&learning.detailOpen){
+    if(learning.confirmed){$('learning-status').textContent='本张对照已经显示；旋转到下一张牌可开始新的练习。';return false;}
+    if(!learning.draft.trim()){$('learning-status').textContent='请先写下自己的理解，再短按旋钮确认。';settleLearningDraft();return false;}
+    return learningActionIndex===0?clearLearningDraft():submitLearning();
+  }
+  if(!['left','right','confirm'].includes(action)){$('learning-status').textContent='学习模式中：旋钮浏览，短按打开，S3 输入，S6 返回占卜。';return false;}
+  const next=learningTransition(learning,action,cards.length);if(next===learning)return false;learning=next;learningActionIndex=1;saveLearning();renderLearning();
+  if(action==='confirm')requestAnimationFrame(()=>$('learning-draft').focus({preventScroll:true}));
+  else requestAnimationFrame(commandFocus);
+  return true;
+}
+function clearLearningDraft(){
+  const next=learningTransition(learning,'clear',cards.length);if(next===learning)return false;learning=next;learningActionIndex=1;saveLearning();renderLearning();requestAnimationFrame(settleLearningDraft);return true;
+}
+function submitLearning(){
+  const next=learningTransition(learning,'submit',cards.length);if(next===learning){$('learning-status').textContent=learning.confirmed?'参考对照已经显示，不会重复生成。':'请先写下自己的理解。';return false;}
+  learning=next;saveLearning();renderLearning();requestAnimationFrame(()=>{commandFocus();$('learning-reference').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});});return true;
+}
 function render(){
   const configuring=state.phase==='configuring',spreadSelecting=state.phase==='spread-selecting',selecting=state.phase==='selecting',revealed=state.phase==='revealed';
   $('spread-picker').hidden=!spreadSelecting;$('deck').hidden=!selecting;renderSpreadPicker();renderDeck();
@@ -235,12 +318,14 @@ function render(){
   $('stage-hint').textContent=state.phase==='idle'?'按下 S1，开始这次占卜。':configuring?'按 S2 进入牌阵选择。':spreadSelecting?'旋转浏览牌阵，短按旋钮确认。':selecting?'按 S3 输入问题；确认后旋转牌组，短按逐张选牌。':'旋转旋钮或点击牌面，查看每张牌的信息。';
   const spread=currentSpread();
   $('selection-label').textContent=state.phase==='idle'?'等待开始':configuring?'等待 S2':spreadSelecting?`${state.spreadIndex+1} / ${spreads.length} · ${spreads[state.spreadIndex].name}`:selecting?`随机牌组 · 已选 ${state.picked.length} / ${spread.count}`:`${spread?.name||''} · ${state.results.length} 张`;
+  $('knob-context').textContent=state.phase==='idle'||configuring?'旋钮待机':spreadSelecting?'旋钮左右 · 浏览牌阵':selecting?'旋钮左右 · 浏览牌背':readingMode?'旋钮左右 · 阅读长文':revealed?'旋钮左右 · 查看牌面':'旋钮待机';
+  $('press-context').textContent=state.phase==='idle'?'按 S1 开始':configuring?'按 S2 选择牌阵':spreadSelecting?'短按 · 确认牌阵':selecting&&!state.question?'短按 · 确认问题':selecting?`短按 · 选中第 ${state.picked.length+1} 张`:revealed?'S4 综合解读':'短按确认';
   $('previous').disabled=!(spreadSelecting||selecting||revealed);$('next').disabled=!(spreadSelecting||selecting||revealed);
   $('main-label').textContent=state.phase==='idle'?'开始':configuring?'进入牌阵选择':spreadSelecting?'确认此牌阵':selecting?`选中这张 · ${state.picked.length+1}/${spread.count}`:'开始新一次';
   $('main-key').textContent=state.phase==='idle'||revealed?'开始':configuring?'牌阵选择':'Enter';
   $('current-setup').textContent=spread?`当前牌阵：${spread.name} · ${spread.count} 张 · 随机 78 张牌组`:spreadSelecting?`当前指向：${spreads[state.spreadIndex].name} · ${spreads[state.spreadIndex].count} 张`:configuring?'按 S2 进入牌阵选择。':'牌阵尚未选择。';
   $('current-setup').classList.toggle('confirmed',Boolean(spread));$('current-question').textContent=state.question?`本次问题：${state.question}`:'尚未确认问题。语音识别文字只有确认后才会进入本次占卜。';$('current-question').classList.toggle('confirmed',Boolean(state.question));updateQuestionControls();
-  $('result-overlay').hidden=!revealed;if(revealed){renderResult();renderReading();}
+  $('result-overlay').hidden=!revealed;if(revealed){renderResult();renderReading();}renderLearning();
 }
 function dispatch(action,source){
   const previous=state,next=transition(state,action);
@@ -265,27 +350,45 @@ function dispatch(action,source){
 }
 function openSetup(source){if(state.phase==='configuring')return dispatch('setup',source);if(state.phase==='spread-selecting')return true;if(state.phase==='selecting')return focusQuestion();$('stage-message').textContent=state.phase==='idle'?'先按 S1 开始。':'按 S1 开始新一轮后再选择牌阵。';return false;}
 function showResultStep(action){if(state.phase!=='revealed'||!['left','right'].includes(action))return false;if(scrollReadingContent(action))return true;resultFocus=(resultFocus+(action==='left'?-1:1)+state.results.length)%state.results.length;renderResultDetail();return true;}
-function performAction(action,source){if(action==='history')return toggleHistoryTool(source);if(historyToolOpen&&['left','right'].includes(action))return moveHistoryTool(action,source);if(historyToolOpen&&action==='confirm')return confirmHistoryTool(source);if(historyToolOpen)setHistoryToolOpen(false,source);if(action==='start')playGreeting();if(action==='setup')return openSetup(source);if(action==='reading')return enterReading(source);if(action==='question')return state.phase==='revealed'?focusFollowUp(source):focusQuestion();if(showResultStep(action))return true;if(action==='confirm'&&document.activeElement===$('follow-up')){void sendFollowUp();return true;}if(action==='confirm'&&document.activeElement===$('question-draft'))return confirmQuestion(source);return dispatch(action,source);}
+function performAction(action,source){if(action==='learning')return toggleLearning(source);if(learning.active)return performLearningAction(action,source);if(action==='history')return toggleHistoryTool(source);if(historyToolOpen&&['left','right'].includes(action))return moveHistoryTool(action,source);if(historyToolOpen&&action==='confirm')return confirmHistoryTool(source);if(historyToolOpen)setHistoryToolOpen(false,source);if(action==='start')playGreeting();if(action==='setup')return openSetup(source);if(action==='reading')return enterReading(source);if(action==='question')return state.phase==='revealed'?focusFollowUp(source):focusQuestion();if(showResultStep(action))return true;if(action==='confirm'&&document.activeElement===$('follow-up')){void sendFollowUp();return true;}if(action==='confirm'&&document.activeElement===$('question-draft'))return confirmQuestion(source);return dispatch(action,source);}
 function mainAction(){if(state.phase==='idle'||state.phase==='revealed')return 'start';if(state.phase==='configuring')return 'setup';return 'confirm';}
 $('main-action').addEventListener('click',()=>performAction(mainAction(),'鼠标／触控'));
 $('question-action').addEventListener('click',()=>performAction('question','鼠标／触控'));
 $('previous').addEventListener('click',()=>performAction('left','鼠标／触控'));
 $('next').addEventListener('click',()=>performAction('right','鼠标／触控'));
 $('new-round').addEventListener('click',()=>performAction('start','鼠标／触控'));
+$('learning-toggle').addEventListener('click',()=>performAction('learning','鼠标／触控'));
+$('learning-exit').addEventListener('click',()=>performAction('learning','鼠标／触控'));
+$('learning-previous').addEventListener('click',()=>performAction('left','鼠标／触控'));
+$('learning-next').addEventListener('click',()=>performAction('right','鼠标／触控'));
+$('learning-open').addEventListener('click',()=>performAction('confirm','鼠标／触控'));
+$('learning-draft').addEventListener('input',event=>{if(consumeLearningCommand($('learning-draft')))return;if(syncLearningDraftField())learningActionIndex=1;renderLearningActionSelection();$('learning-knob-context').textContent=learning.draft.trim()?'旋钮左右 · 选择清空或确认；短按执行':'旋钮左右 · 换牌并重新观察';if(!event.isComposing)$('learning-status').textContent='可以继续修改；确认后才显示参考解读。';});
+$('learning-draft').addEventListener('compositionend',()=>requestAnimationFrame(settleLearningDraft));
+$('learning-draft').addEventListener('change',()=>requestAnimationFrame(settleLearningDraft));
+$('learning-clear').addEventListener('click',clearLearningDraft);
+$('learning-submit').addEventListener('click',submitLearning);
 function receiveFixedText(value){
-  const command=fixedTextAction(value);if(!command)return false;$('command-input').value='';received++;accepted++;
-  const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读'],history:['5','历史备份']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
+  const command=fixedTextAction(value);if(!command)return false;$('command-input').value='';$('learning-command-input').value='';received++;accepted++;
+  const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读'],history:['5','历史备份'],learning:['6','学习模式']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
   logs.unshift(`${new Date().toLocaleTimeString('zh-CN',{hour12:false})}  S${meta[0]}“${meta[1]}”  → ${outcome}`);logs=logs.slice(0,20);updateLog();return true;
 }
-function routeCommandInput(){
-  const value=$('command-input').value;if(!value)return false;if(receiveFixedText(value))return true;
+function consumeLearningCommand(field){
+  const match=field.value.match(/(?:S6\s*)?学习\s*模式\s*$/);if(!match)return false;
+  field.value=field.value.slice(0,match.index);return receiveFixedText('学习模式');
+}
+function routeCommandInput(field=$('command-input')){
+  const value=field.value;if(!value)return false;if(receiveFixedText(value))return true;
+  if(learning.active){field.value='';if(!learning.detailOpen||learning.confirmed){renderLearning();return false;}learning=learningTransition(learning,{type:'set-draft',value:learning.draft+value},cards.length);saveLearning();renderLearning();$('learning-draft').focus({preventScroll:true});$('learning-status').textContent='S3 语音转写已进入“我的理解”；确认以前仍可修改。';return true;}
   if(state.phase!=='revealed'||!readingSession)return false;
   readingMode=true;$('follow-up').value=($('follow-up').value+value).slice(0,maxQuestionLength);$('command-input').value='';$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';return true;
 }
-$('command-input').addEventListener('input',routeCommandInput);
-let observedCommandValue='',observedFollowUpValue='';
+$('command-input').addEventListener('input',()=>routeCommandInput($('command-input')));
+$('learning-command-input').addEventListener('input',()=>routeCommandInput($('learning-command-input')));
+let observedCommandValue='',observedLearningCommandValue='',observedFollowUpValue='';
 setInterval(()=>{
-  const commandValue=$('command-input').value;if(commandValue&&commandValue===observedCommandValue)routeCommandInput();observedCommandValue=$('command-input').value;
+  const commandValue=$('command-input').value;if(commandValue&&commandValue===observedCommandValue)routeCommandInput($('command-input'));observedCommandValue=$('command-input').value;
+  const learningCommandValue=$('learning-command-input').value;if(learningCommandValue&&learningCommandValue===observedLearningCommandValue)routeCommandInput($('learning-command-input'));observedLearningCommandValue=$('learning-command-input').value;
+  const learningDraftValue=$('learning-draft').value;if(learning.active&&learning.detailOpen&&!learning.confirmed&&learningDraftValue!==learning.draft)syncLearningDraftField('S3 语音转写已进入“我的理解”；确认以前仍可修改。');
   const followUpValue=$('follow-up').value;if(state.phase==='revealed'&&readingSession&&followUpValue&&followUpValue!==observedFollowUpValue){readingMode=true;$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';}observedFollowUpValue=followUpValue;
 },120);
 document.addEventListener('paste',event=>{
@@ -295,7 +398,7 @@ document.addEventListener('paste',event=>{
 $('browser-listen').addEventListener('click',startRecognition);
 $('stop-listening').addEventListener('click',()=>{stopRecognition();setQuestionStatus('stopped',$('question-draft').value.trim()?'聆听已停止。可以修改文字，再确认问题。':'聆听已停止。可以重试或直接输入问题。');});
 $('clear-question').addEventListener('click',()=>{stopRecognition(true);$('question-draft').value='';setQuestionStatus('stopped','问题文字已清空，当前占卜中的已确认问题不会改变。');$('question-draft').focus();});
-$('question-draft').addEventListener('input',()=>{if(questionStatus!=='listening')setQuestionStatus($('question-draft').value.trim()?'reviewing':'stopped',$('question-draft').value.trim()?'可以继续修改；短按旋钮或点击确认后才会写入本次占卜。':'尚无问题文字。可以按 S3 语音输入，或直接打字。');});
+$('question-draft').addEventListener('input',()=>{if(consumeLearningCommand($('question-draft')))return;if(questionStatus!=='listening')setQuestionStatus($('question-draft').value.trim()?'reviewing':'stopped',$('question-draft').value.trim()?'可以继续修改；短按旋钮或点击确认后才会写入本次占卜。':'尚无问题文字。可以按 S3 语音输入，或直接打字。');});
 function confirmQuestion(source){
   const value=$('question-draft').value.trim();if(!value){setQuestionStatus('stopped','还没有问题文字。请先按 S3 说话，或直接输入。');return false;}
   stopRecognition(true);const next=transition(state,{type:'set-question',value});if(next!==state){state=next;saveState();render();}
@@ -304,7 +407,7 @@ function confirmQuestion(source){
 $('confirm-question').addEventListener('click',()=>confirmQuestion('鼠标／触控'));
 $('generate-reading').addEventListener('click',()=>enterReading('鼠标／触控'));
 $('send-follow-up').addEventListener('click',sendFollowUp);
-$('follow-up').addEventListener('input',()=>{const value=$('follow-up').value,normalized=value.replaceAll(/\s/g,'');if(['历史备份','S5历史备份'].includes(normalized)){$('follow-up').value='';receiveFixedText(value);return;}if(readingMode&&value.trim())scrollReadingIntoView($('follow-up'));});
+$('follow-up').addEventListener('input',()=>{if(consumeLearningCommand($('follow-up')))return;const value=$('follow-up').value,normalized=value.replaceAll(/\s/g,'');if(['历史备份','S5历史备份'].includes(normalized)){$('follow-up').value='';receiveFixedText(value);return;}if(readingMode&&value.trim())scrollReadingIntoView($('follow-up'));});
 $('history-tool-toggle').addEventListener('click',()=>toggleHistoryTool('鼠标／触控'));
 $('history-export').addEventListener('click',()=>{historyToolIndex=0;renderHistoryTool();exportHistory();});
 $('history-restore').addEventListener('click',()=>{historyToolIndex=1;renderHistoryTool();$('history-import').click();});
@@ -320,11 +423,11 @@ function updateLog(){
 }
 document.addEventListener('keydown',event=>{
   const interactive=event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]');
-  if(acceptsHardwareCommand()&&document.activeElement!==$('command-input')&&!interactive&&!event.ctrlKey&&!event.metaKey&&!event.altKey)$('command-input').focus({preventScroll:true});
+  if(acceptsHardwareCommand()&&![$('command-input'),$('learning-command-input')].includes(document.activeElement)&&!interactive&&!event.ctrlKey&&!event.metaKey&&!event.altKey)commandFocus();
 },true);
 document.addEventListener('keydown',event=>{
-  const interactive=event.target.closest('button,a,input,textarea,select,[contenteditable="true"],summary'),questionConfirm=interactive?.id==='question-draft'&&['Enter','NumpadEnter'].includes(event.code),questionShortcut=interactive?.id==='question-draft'&&['Digit3','Numpad3'].includes(event.code),followUpConfirm=interactive?.id==='follow-up'&&['Enter','NumpadEnter'].includes(event.code),followUpShortcut=interactive?.id==='follow-up'&&['Digit3','Numpad3'].includes(event.code),followUpScroll=interactive?.id==='follow-up'&&['ArrowLeft','ArrowRight'].includes(event.code),historyShortcut=interactive?.id==='command-input'&&['Digit5','Numpad5'].includes(event.code),commandKey=interactive?.id==='command-input';
-  if(interactive&&interactive.id!=='test-only'&&!questionConfirm&&!questionShortcut&&!followUpConfirm&&!followUpShortcut&&!followUpScroll&&!historyShortcut&&!commandKey)return;const input=keyInput(event,held);if(!input)return;event.preventDefault();received++;let outcome;
+  const interactive=event.target.closest('button,a,input,textarea,select,[contenteditable="true"],summary'),questionConfirm=interactive?.id==='question-draft'&&['Enter','NumpadEnter'].includes(event.code),questionShortcut=interactive?.id==='question-draft'&&['Digit3','Numpad3'].includes(event.code),followUpConfirm=interactive?.id==='follow-up'&&['Enter','NumpadEnter'].includes(event.code),followUpShortcut=interactive?.id==='follow-up'&&['Digit3','Numpad3'].includes(event.code),followUpScroll=interactive?.id==='follow-up'&&['ArrowLeft','ArrowRight'].includes(event.code),learningShortcut=interactive?.id==='learning-draft'&&['Digit3','Numpad3'].includes(event.code),learningKnobChoice=interactive?.id==='learning-draft'&&['ArrowLeft','ArrowRight'].includes(event.code),learningKnobConfirm=interactive?.id==='learning-draft'&&['Enter','NumpadEnter'].includes(event.code),learningToggleShortcut=['Digit6','Numpad6'].includes(event.code),historyShortcut=interactive?.id==='command-input'&&['Digit5','Numpad5'].includes(event.code),commandKey=['command-input','learning-command-input'].includes(interactive?.id);
+  if(interactive&&interactive.id!=='test-only'&&!questionConfirm&&!questionShortcut&&!followUpConfirm&&!followUpShortcut&&!followUpScroll&&!learningShortcut&&!learningKnobChoice&&!learningKnobConfirm&&!learningToggleShortcut&&!historyShortcut&&!commandKey)return;const input=keyInput(event,held);if(!input)return;event.preventDefault();received++;let outcome;
   if(input.duplicate){duplicates++;outcome='忽略重复（长按／尚未松开）';}
   else{
     accepted++;const canonical=input.code.replace('Numpad','Digit').replace('DigitEnter','Enter');hits.set(canonical,(hits.get(canonical)||0)+1);const tile=[...$('key-monitor').children].find(el=>el.dataset.code===canonical);
@@ -336,20 +439,24 @@ document.addEventListener('keydown',event=>{
 document.addEventListener('keyup',event=>held.delete(event.code));
 function focusStatus(){held.clear();$('focus-status').textContent=document.hasFocus()&&!document.hidden?'页面可接收输入':'页面未聚焦 · 点击页面后测试';}
 window.addEventListener('blur',focusStatus);
-window.addEventListener('focus',()=>{focusStatus();requestAnimationFrame(commandFocus);});
-document.addEventListener('visibilitychange',()=>{focusStatus();if(!document.hidden)requestAnimationFrame(commandFocus);});
+window.addEventListener('focus',()=>{focusStatus();restoreLearningDraftAfterExternalInput();});
+document.addEventListener('visibilitychange',()=>{focusStatus();if(!document.hidden)restoreLearningDraftAfterExternalInput();});
 document.addEventListener('pointerup',event=>{if(['idle','configuring'].includes(state.phase)&&!event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]'))requestAnimationFrame(commandFocus);});
 $('clear-log').addEventListener('click',()=>{received=accepted=duplicates=0;logs=[];hits.clear();for(const tile of $('key-monitor').children)tile.querySelector('small').textContent='0 次';updateLog();});
 $('provider-badge').textContent=readingProvider===apiReadingProvider?'安全服务端接口 · 密钥仅在服务端':'视觉线索模拟接口 · 零模型费用';
 $('question-draft').value=state.question||'';if(state.phase==='revealed')loadReadingSession();render();renderHistory();void loadHistory();focusStatus();
-if(state.phase==='configuring'){setQuestionStatus('idle','按 S2 进入牌阵选择。');commandFocus();}
-if(state.phase==='spread-selecting')setQuestionStatus('idle','旋转选择牌阵，短按旋钮确认。');
-if(state.phase==='selecting'){
-  setQuestionStatus(state.question?'idle':'stopped',state.question?'问题已写入本次占卜；旋转选择牌背，再短按旋钮选牌。':'问题框可用。按 S3 说话，或直接输入。');
-  if(state.question)document.activeElement?.blur?.();else $('question-draft').focus();
+if(learning.active)commandFocus();
+else{
+  if(state.phase==='configuring'){setQuestionStatus('idle','按 S2 进入牌阵选择。');commandFocus();}
+  if(state.phase==='spread-selecting')setQuestionStatus('idle','旋转选择牌阵，短按旋钮确认。');
+  if(state.phase==='selecting'){
+    setQuestionStatus(state.question?'idle':'stopped',state.question?'问题已写入本次占卜；旋转选择牌背，再短按旋钮选牌。':'问题框可用。按 S3 说话，或直接输入。');
+    if(state.question)document.activeElement?.blur?.();else $('question-draft').focus();
+  }
+  if(state.phase==='revealed'){setQuestionStatus('idle','本次问题和牌阵已经锁定。');$('stage-message').textContent='已恢复本次牌阵结果。旋转可查看每张牌的信息。';commandFocus();}
+  if(state.phase==='idle')commandFocus();
 }
-if(state.phase==='revealed'){setQuestionStatus('idle','本次问题和牌阵已经锁定。');$('stage-message').textContent='已恢复本次牌阵结果。旋转可查看每张牌的信息。';commandFocus();}
-if(state.phase==='idle')commandFocus();if(greetingPlayed)$('greeting-status').textContent='启动语已在本标签页播放过。';
+if(greetingPlayed)$('greeting-status').textContent='启动语已在本标签页播放过。';
 if(document.modelContext?.registerTool){
   const lifecycle=new AbortController(),tools=[
     {name:'read_tarot_state',description:'读取当前牌阵、随机牌组进度和已确认结果。',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({...state})},
