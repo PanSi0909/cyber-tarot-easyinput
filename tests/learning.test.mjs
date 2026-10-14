@@ -72,6 +72,7 @@ test('直接打开本地文件会进入 HTTP 预览，学习确认支持旋钮�
   assert.match(app,/learningActionIndex=action==='left'\?0:1/);assert.match(app,/return learningActionIndex===0\?clearLearningDraft\(\):submitLearning\(\)/);
   assert.match(app,/learningKnobChoice=interactive\?\.id==='learning-draft'&&\['ArrowLeft','ArrowRight'\]\.includes\(event\.code\)/);
   assert.match(app,/learningKnobConfirm=interactive\?\.id==='learning-draft'&&\['Enter','NumpadEnter'\]\.includes\(event\.code\)/);
+  assert.match(app,/learningToggleShortcut=\['command-input','learning-command-input'\]\.includes\(interactive\?\.id\)&&\['Digit6','Numpad6'\]\.includes\(event\.code\)/);
   assert.match(styles,/\.learning-actions button\.selected\{/);
 });
 
