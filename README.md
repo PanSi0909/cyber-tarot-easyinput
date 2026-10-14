@@ -24,7 +24,7 @@
 
 本地服务端模式：运行 `node server.mjs`，再打开 `http://127.0.0.1:4173/?provider=api`。默认 `TAROT_AI_PROVIDER=mock`，请求仍由本地专业知识模拟接口完成，不访问外部模型、不产生模型费用。两种模式都必须通过 HTTP 打开，不能直接双击 HTML。
 
-私有正式站点：https://cyber-tarot-between-signals.a0921093504.chatgpt.site/ 。第 6 课 V1.4.4 已完成软件回归和实体开发板增量验收；该地址继续作为本项目仅所有者可访问的正式发布地址。
+私有正式站点：https://cyber-tarot-between-signals.a0921093504.chatgpt.site/ 。第 6 课 V1.4.7 已完成软件回归和实体开发板增量验收并发布；该地址继续作为本项目仅所有者可访问的正式发布地址。
 
 ## 第 5 课历史与流程
 
