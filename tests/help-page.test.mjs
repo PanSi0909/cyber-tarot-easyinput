@@ -21,3 +21,10 @@ test('五牌选择缩略图不再渲染解释性文字',async()=>{
   const app=await readFile(new URL('app.mjs',dist),'utf8');
   assert.doesNotMatch(app,/marker\.dataset\.label|data-label/);
 });
+
+test('未确认问题时短按始终回到问题确认，不会误报抽牌动作不可用',async()=>{
+  const app=await readFile(new URL('app.mjs',dist),'utf8');
+  assert.match(app,/state\.phase==='selecting'&&!state\.question\)\{\$\('question-draft'\)\.focus/);
+  assert.match(app,/action==='confirm'&&state\.phase==='selecting'&&!state\.question\)return confirmQuestion\(source\)/);
+  assert.match(app,/selecting&&!state\.question\?'确认问题':selecting\?`选中这张/);
+});
