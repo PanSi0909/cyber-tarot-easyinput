@@ -2,6 +2,9 @@ import {mockReadingProvider,normalizeReading} from '../dist/ai-reading.mjs';
 import {assertReadingInput,assertFollowUpPayload} from './reading-schema.mjs';
 import {buildInitialMessages} from './prompts/tarot-reading.v2.mjs';
 import {buildFollowUpMessages} from './prompts/tarot-follow-up.v2.mjs';
+import {mockInsightProvider,normalizeInsight} from '../dist/insights.mjs';
+import {assertInsightSummary} from './insights-schema.mjs';
+import {buildInsightMessages} from './prompts/tarot-insights.v1.mjs';
 
 function parseJsonContent(value){
   const text=typeof value==='string'?value.trim():'';
@@ -31,4 +34,10 @@ export async function generateFollowUp(config,payload,fetchImpl=fetch){
   if(config.provider==='mock')return mockReadingProvider.answerFollowUp(payload);
   const result=await callBailian(config,buildFollowUpMessages(payload),fetchImpl),answer=typeof result?.answer==='string'?result.answer.trim():'';
   if(!answer)throw new Error('模型返回的追问答案无效。');return answer;
+}
+
+export async function generateInsight(config,summary,fetchImpl=fetch){
+  assertInsightSummary(summary);
+  if(config.provider==='mock')return mockInsightProvider.generateInsight(summary);
+  return normalizeInsight(await callBailian(config,buildInsightMessages(summary),fetchImpl));
 }

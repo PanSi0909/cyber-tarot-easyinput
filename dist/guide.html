@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#d8cfba">
-  <meta name="description" content="赛博塔罗的使用手册：操作流程、按键旋钮、牌阵、正逆位、AI 解读、历史备份与学习模式。">
+  <meta name="description" content="赛博塔罗的使用手册：操作流程、按键旋钮、牌阵、AI 解读、历史备份、学习模式与周期洞察。">
   <title>使用手册 · 赛博塔罗</title>
   <link rel="stylesheet" href="design-tokens.css?v=1.4.0">
   <link rel="stylesheet" href="guide.css?v=1.4.0">
@@ -13,9 +13,9 @@
   <header class="manual-topbar"><a class="manual-brand" href="index.html"><span>✦</span> BETWEEN SIGNALS</a><a class="back-link" href="index.html">返回占卜台 ←</a></header>
   <main>
     <section class="manual-hero">
-      <p class="kicker">USER MANUAL / VOL. 06</p>
+      <p class="kicker">USER MANUAL / VOL. 07</p>
       <h1><span>THE</span><span>MANUAL</span></h1>
-      <div class="manual-intro"><p>操作说明集中在这里。占卜台只显示当前一步真正需要的动作，让问题、牌和选择保持在画面中心。</p><nav aria-label="手册目录"><a href="#start">快速开始</a><a href="#controls">按键与旋钮</a><a href="#spreads">牌阵</a><a href="#cards">牌面</a><a href="#reading">解读与历史</a><a href="#learning">学习模式</a></nav></div>
+      <div class="manual-intro"><p>操作说明集中在这里。占卜台只显示当前一步真正需要的动作，让问题、牌和选择保持在画面中心。</p><nav aria-label="手册目录"><a href="#start">快速开始</a><a href="#controls">按键与旋钮</a><a href="#spreads">牌阵</a><a href="#cards">牌面</a><a href="#reading">解读与历史</a><a href="#learning">学习模式</a><a href="#insights">周期洞察</a></nav></div>
     </section>
 
     <section class="manual-section" id="start">
@@ -29,6 +29,7 @@
         <li><b>浏览与追问</b><span>旋钮滚动长内容；S3 输入追问，短按发送。</span></li>
         <li><b>历史备份</b><span>按 S5 打开备份工具，保存或恢复历史。</span></li>
         <li><b>学习模式</b><span>随时按 S6 进入；再次按 S6 返回原占卜页面。</span></li>
+        <li><b>周期洞察</b><span>按 S7 进入；旋钮选择 7/30/365 天，短按生成。</span></li>
       </ol>
     </section>
 
@@ -42,6 +43,7 @@
         <div class="control-row" role="row"><strong>S4 综合解读</strong><span>Digit4 / Numpad4</span><span>生成并进入综合解读</span></div>
         <div class="control-row" role="row"><strong>S5 历史备份</strong><span>Digit5 / Numpad5</span><span>打开或关闭备份工具</span></div>
         <div class="control-row" role="row"><strong>S6 学习模式</strong><span>Digit6 / Numpad6</span><span>进入或退出学习模式</span></div>
+        <div class="control-row" role="row"><strong>S7 周期洞察</strong><span>Digit7 / Numpad7</span><span>进入或退出周期洞察</span></div>
         <div class="control-row" role="row"><strong>旋钮左右</strong><span>← / →</span><span>选择牌阵、牌背或结果牌</span></div>
         <div class="control-row" role="row"><strong>旋钮短按</strong><span>Enter</span><span>确认当前选择；每次只执行一次</span></div>
       </div>
@@ -72,6 +74,11 @@
       <header><span>06</span><div><p>STUDY THE SYMBOLS</p><h2>学习模式</h2></div></header>
       <p class="status-chip">已启用 · 本地知识 · 零模型费用</p>
       <div class="learning-layout"><div><h3>自由浏览 78 张牌</h3><p>S6 进入学习模式，旋钮左右循环浏览完整牌组，短按只打开当前牌；再次按 S6 返回进入前的占卜状态。</p></div><div><h3>先写自己的理解</h3><p>先观察视觉线索，再用普通文字或 S3 语音转写输入自己的理解。确认前不显示参考答案；确认后显示相近理解、遗漏线索、正逆位差异和反思问题。</p></div><div><h3>刷新与隔离</h3><p>刷新后恢复学习模式、当前牌和详情是否打开；未确认草稿与对照结果会清除。原占卜的问题、牌阵、卡牌、AI 解读和追问使用原有存储，学习模式不会覆盖它们。</p></div></div>
+    </section>
+    <section class="manual-section learning-section" id="insights">
+      <header><span>07</span><div><p>COUNT · REVIEW · REFLECT</p><h2>周期洞察</h2></div></header>
+      <p class="status-chip">历史只读 · 默认 mock · 独立保存</p>
+      <div class="learning-layout"><div><h3>选择滚动范围</h3><p>S7 进入周期洞察，旋钮左右在最近 7 天、30 天、365 天之间循环，短按只确认当前范围并生成一次。</p></div><div><h3>先统计，再交给 AI</h3><p>网页先从版本化历史中计算记录数、常见牌阵、重复卡牌、正逆位比例和问题时间分布，再把统计摘要与有限记录摘录交给现有 AI 服务链。</p></div><div><h3>不足与边界</h3><p>少于 3 条完整记录时只显示“数据不足”和缺口，不生成趋势结论。洞察用于自我反思，不作确定性预测、专业结论或性格和心理诊断。</p></div></div>
     </section>
   </main>
   <footer><span>BETWEEN SIGNALS · USER MANUAL</span><a href="index.html">返回占卜台</a></footer>

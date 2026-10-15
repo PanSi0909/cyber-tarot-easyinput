@@ -31,6 +31,7 @@ export const spreadPositions={
 };
 export function fixedTextAction(value){
   const normalized=typeof value==='string'?value.replaceAll(/\s/g,''):'';
+  if(['周期洞察','S7周期洞察'].includes(normalized))return 'insights';
   if(['学习模式','S6学习模式'].includes(normalized))return 'learning';
   if(['历史备份','S5历史备份'].includes(normalized))return 'history';
   if(normalized.endsWith('综合解读'))return 'reading';
@@ -133,6 +134,6 @@ export function keyInput(event,held){
   if(!monitored||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey)return null;
   if(event.repeat||held.has(code))return {code,duplicate:true};
   held.add(code);
-  const action=code==='Digit1'||code==='Numpad1'?'start':code==='Digit2'||code==='Numpad2'?'setup':code==='Digit3'||code==='Numpad3'?'question':code==='Digit4'||code==='Numpad4'?'reading':code==='Digit5'||code==='Numpad5'?'history':code==='Digit6'||code==='Numpad6'?'learning':code==='ArrowLeft'?'left':code==='ArrowRight'?'right':code==='Enter'||code==='NumpadEnter'?'confirm':null;
+  const action=code==='Digit1'||code==='Numpad1'?'start':code==='Digit2'||code==='Numpad2'?'setup':code==='Digit3'||code==='Numpad3'?'question':code==='Digit4'||code==='Numpad4'?'reading':code==='Digit5'||code==='Numpad5'?'history':code==='Digit6'||code==='Numpad6'?'learning':code==='Digit7'||code==='Numpad7'?'insights':code==='ArrowLeft'?'left':code==='ArrowRight'?'right':code==='Enter'||code==='NumpadEnter'?'confirm':null;
   return {code,duplicate:false,action};
 }

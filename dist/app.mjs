@@ -1,27 +1,30 @@
-import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,canReceiveHardwareText,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=1.4.5';
+import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,canReceiveHardwareText,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=1.5.0';
 import {interpretCard,getCardKnowledge} from './tarot-knowledge.mjs?v=0.8.0';
 import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.8.0';
 import {historyRecordSchemaVersion,createHistoryRecord,upsertHistoryRecord,serializeHistoryBackup,restoreHistoryBackup,openHistoryDatabase,listHistoryRecords,saveHistoryRecord,replaceHistoryRecords} from './history.mjs?v=0.9.0';
 import {renderCardBack,renderCardFace} from './card-visuals.mjs?v=1.4.0';
 import {freshLearning,restoreLearning,serializeLearning,learningTransition,compareLearningInterpretation} from './learning.mjs?v=1.0.0';
+import {insightRanges,freshInsightState,insightTransition,analyzeHistory,buildInsightSummary,requestInsight,mockInsightProvider,apiInsightProvider,createInsightReport,openInsightDatabase,saveInsightReport} from './insights.mjs?v=1.5.0';
 const $=id=>document.getElementById(id);
 const storageKey='cyber-tarot.v1',greetingKey='cyber-tarot.greeting.v1',readingStorageKey='cyber-tarot.reading.v1',learningStorageKey='cyber-tarot.learning.v1';
 const held=new Set(),hits=new Map(),timers=new Map();
 const readingProvider=new URLSearchParams(location.search).get('provider')==='api'?apiReadingProvider:mockReadingProvider;
+const insightProvider=readingProvider===apiReadingProvider?apiInsightProvider:mockInsightProvider;
 let state=fresh(),greetingPlayed=false,storageAvailable=true,received=0,accepted=0,duplicates=0,logs=[];
 let recognition=null,questionStatus='idle',resultFocus=0;
 let readingSession=null,readingStatus='idle',readingError='',readingMode=false;
 let historyDatabase=null,historyRecords=[],historyStatus='loading',historyMessage='正在读取本机历史记录…',historyLoaded=false,historyPendingRecord=null,historyPendingRecords=null,historyPendingImportCount=0,historyRetryAction='load',selectedHistoryId=null,historySaveQueue=Promise.resolve();
 let historyToolOpen=false,historyToolIndex=0,readingScrollBeforeHistory=0;
 let learning=freshLearning(),learningActionIndex=1;
+let insights=freshInsightState(),insightDatabase=null,insightGenerationToken=0;
 let deckMotionTimer=null;
 try{state=restore(sessionStorage.getItem(storageKey));}catch{}
 try{greetingPlayed=sessionStorage.getItem(greetingKey)==='1';}catch{}
 try{learning=restoreLearning(sessionStorage.getItem(learningStorageKey),cards.length);}catch{}
 
-function acceptsHardwareCommand(){return learning.active||historyToolOpen||canReceiveHardwareText(state);}
-function userIsEditing(){const active=document.activeElement;return active&&![$('command-input'),$('learning-command-input')].includes(active)&&active.matches('input,textarea,select,[contenteditable="true"]');}
-function commandFocus(){if(!document.hasFocus())return;if(learning.active){const target=learning.detailOpen&&!learning.confirmed?$('learning-draft'):$('learning-command-input');if(document.activeElement!==target)target.focus({preventScroll:true});return;}if(historyToolOpen){$('command-input').focus({preventScroll:true});return;}if(state.phase==='selecting'&&!state.question){$('question-draft').focus({preventScroll:true});return;}if(userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
+function acceptsHardwareCommand(){return insights.active||learning.active||historyToolOpen||canReceiveHardwareText(state);}
+function userIsEditing(){const active=document.activeElement;return active&&![$('command-input'),$('learning-command-input'),$('insights-command-input')].includes(active)&&active.matches('input,textarea,select,[contenteditable="true"]');}
+function commandFocus(){if(!document.hasFocus())return;if(insights.active){$('insights-command-input').focus({preventScroll:true});return;}if(learning.active){const target=learning.detailOpen&&!learning.confirmed?$('learning-draft'):$('learning-command-input');if(document.activeElement!==target)target.focus({preventScroll:true});return;}if(historyToolOpen){$('command-input').focus({preventScroll:true});return;}if(state.phase==='selecting'&&!state.question){$('question-draft').focus({preventScroll:true});return;}if(userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
 function saveState(){try{sessionStorage.setItem(storageKey,JSON.stringify(state));}catch{storageAvailable=false;}}
 function saveLearning(){try{sessionStorage.setItem(learningStorageKey,serializeLearning(learning));}catch{storageAvailable=false;}}
 function currentSpread(){return spreads.find(spread=>spread.id===state.spreadChoice);}
@@ -121,7 +124,7 @@ function renderResult(){
 function currentReadingInput(){return buildReadingInput(state);}
 function formatHistoryDate(value){try{return new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));}catch{return value;}}
 function historyNode(tag,value,className){const node=document.createElement(tag);if(className)node.className=className;node.textContent=value;return node;}
-function setHistoryState(status,message,retryAction=historyRetryAction){historyStatus=status;historyMessage=message;historyRetryAction=retryAction;renderHistory();}
+function setHistoryState(status,message,retryAction=historyRetryAction){historyStatus=status;historyMessage=message;historyRetryAction=retryAction;renderHistory();if(insights.active)renderInsights();}
 function renderHistoryTool(){
   $('history-tool').hidden=!historyToolOpen;$('history-tool-toggle').setAttribute('aria-expanded',String(historyToolOpen));$('result-overlay').hidden=state.phase!=='revealed'||historyToolOpen;
   [$('history-export'),$('history-restore')].forEach((option,index)=>{const selected=index===historyToolIndex;option.setAttribute('aria-selected',String(selected));option.tabIndex=selected?0:-1;});
@@ -235,6 +238,54 @@ async function sendFollowUp(){
     readingSession=appendFollowUp(session,turn);readingStatus='ready';$('follow-up').value='';$('follow-up').blur();saveReadingSession();renderReading();void archiveCurrentSession();commandFocus();scrollReadingIntoView($('follow-up-history'));return true;
   }catch(error){readingStatus='ready';renderReading();$('ai-reading-status').textContent=`追问失败：${error?.message||'接口暂时不可用'}。可保留问题后重试。`;return false;}
 }
+function insightList(id,items,empty='暂无'){const values=items.length?items:[empty];$(id).replaceChildren(...values.map(value=>{const item=document.createElement('li');item.textContent=value;return item;}));}
+function formatInsightDate(value){try{return new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));}catch{return value;}}
+function syncModalInert(){const blocked=learning.active||insights.active;document.querySelector('main').inert=blocked;document.querySelector('body>footer').inert=blocked;$('learning-overlay').inert=insights.active;}
+function renderInsights(){
+  $('insights-overlay').hidden=!insights.active;$('insights-toggle').setAttribute('aria-pressed',String(insights.active));document.body.classList.toggle('insights-active',insights.active);syncModalInert();
+  [...$('insights-range-options').children].forEach((button,index)=>button.setAttribute('aria-selected',String(index===insights.rangeIndex)));
+  const range=insightRanges[insights.rangeIndex],labels={idle:'等待选择',loading:'正在生成',ready:'已生成',insufficient:'数据不足',error:'失败'};
+  $('insights-status').dataset.state=insights.status;$('insights-status').textContent=labels[insights.status]||insights.status;
+  $('insights-message').textContent=insights.status==='idle'?`${range.label} · 选择后短按旋钮或点击生成。`:insights.status==='loading'?`正在根据 ${range.label} 的客观统计生成反思洞察…`:insights.status==='insufficient'?`当前只有 ${insights.analysis?.recordCount||0} 条记录；至少还需要 ${insights.analysis?.needed||0} 条完整记录。`:insights.status==='error'?insights.error:`${range.label}的周期洞察已生成。`;
+  $('insights-generate').disabled=insights.status==='loading'||!historyLoaded;$('insights-generate').textContent=insights.status==='loading'?'正在生成…':'确认并生成洞察';$('insights-retry').hidden=insights.status!=='error';
+  const analysis=insights.analysis;$('insights-statistics').hidden=!analysis;
+  if(analysis){
+    $('insights-record-count').textContent=`${analysis.recordCount} 条记录`;$('insights-start').textContent=formatInsightDate(analysis.range.start);$('insights-end').textContent=formatInsightDate(analysis.range.end);$('insights-sample-count').textContent=analysis.sufficient?`${analysis.recordCount} 条 · 达到最小样本`:`${analysis.recordCount} 条 · 还差 ${analysis.needed} 条`;
+    insightList('insights-spreads',analysis.spreads.slice(0,5).map(item=>`${item.label} · ${item.count} 次`),'范围内暂无牌阵');insightList('insights-cards',analysis.repeatedCards.slice(0,5).map(item=>`${item.label} · ${item.count} 次`),'没有重复达到 2 次的卡牌');
+    $('insights-orientations').textContent=`正位 ${analysis.orientations.upright} 张（${analysis.orientations.uprightPercent}%）· 逆位 ${analysis.orientations.reversed} 张（${analysis.orientations.reversedPercent}%）`;
+    const periods=analysis.questionTimes.dayParts.map(item=>`${item.label} ${item.count} 次`).join(' · '),weekdays=analysis.questionTimes.weekdays.slice(0,3).map(item=>`${item.label} ${item.count} 次`).join(' · ');$('insights-times').textContent=periods?`${periods}${weekdays?`；较常见日期：${weekdays}`:''}`:'范围内暂无记录';
+  }
+  const result=insights.result;$('insights-output').hidden=!result;
+  if(result){$('insights-provider').textContent=insightProvider.label;insightList('insights-themes',result.mainThemes);insightList('insights-patterns',result.repeatedPatterns);insightList('insights-attention',result.attentionPoints);insightList('insights-questions',result.reflectionQuestions);insightList('insights-actions',result.actionSuggestions);$('insights-disclaimer').textContent=result.disclaimer;$('insights-save-status').textContent=insights.saveMessage;}
+}
+function toggleInsights(source){
+  const exiting=insights.active,returnScroll=insights.returnScroll;insightGenerationToken++;
+  if(exiting&&insights.status==='loading')insights={...insights,status:'idle',analysis:null,result:null,error:'',saveMessage:''};
+  if(!exiting)insights={...insights,returnScroll:window.scrollY};
+  stopRecognition(true);insights=insightTransition(insights,'toggle');renderInsights();
+  if(exiting)requestAnimationFrame(()=>{window.scrollTo({top:returnScroll,behavior:'auto'});commandFocus();});
+  else requestAnimationFrame(()=>{commandFocus();$('insights-range-options').scrollIntoView({behavior:'auto',block:'center'});});
+  if(!historyLoaded&&historyStatus!=='loading')void loadHistory();return true;
+}
+function performInsightAction(action,source){
+  if(['left','right'].includes(action)){insightGenerationToken++;insights=insightTransition(insights,action);renderInsights();$('insights-message').textContent=`${source} · 已选择${insightRanges[insights.rangeIndex].label}，短按旋钮生成。`;return true;}
+  if(action==='confirm'){void generateInsight();return true;}
+  return false;
+}
+async function generateInsight(){
+  if(insights.status==='loading')return false;
+  if(!historyLoaded){insights={...insights,status:'error',error:'历史记录尚未加载完成，请稍后重试。'};renderInsights();return false;}
+  let analysis;try{analysis=analyzeHistory(historyRecords,insightRanges[insights.rangeIndex].days);}catch(error){insights={...insights,status:'error',error:`统计失败：${error?.message||'历史记录无效'}`};renderInsights();return false;}
+  if(!analysis.sufficient){insights={...insights,status:'insufficient',analysis,result:null,error:'',saveMessage:'未调用 AI，也没有保存趋势性结论。'};renderInsights();return false;}
+  const token=++insightGenerationToken;insights={...insights,status:'loading',analysis,result:null,error:'',saveMessage:''};renderInsights();
+  try{
+    const result=await requestInsight(insightProvider,buildInsightSummary(analysis));if(token!==insightGenerationToken||!insights.active)return false;
+    insights={...insights,status:'ready',result,saveMessage:'正在保存到独立周期洞察存储…'};renderInsights();
+    try{insightDatabase=insightDatabase||await openInsightDatabase();await saveInsightReport(insightDatabase,createInsightReport(analysis,result,insightProvider.id));if(token===insightGenerationToken){insights={...insights,saveMessage:'已独立保存；原始占卜历史未被修改。'};renderInsights();}}
+    catch(error){if(token===insightGenerationToken){insights={...insights,saveMessage:`洞察已生成，但独立保存失败：${error?.message||'浏览器存储不可用'}。原始历史未受影响。`};renderInsights();}}
+    return true;
+  }catch(error){if(token!==insightGenerationToken)return false;insights={...insights,status:'error',result:null,error:`洞察生成失败：${error?.message||'接口暂时不可用'}。可以重试，原始历史不会改变。`,saveMessage:''};renderInsights();return false;}
+}
 function learningCard(){return cards[learning.index]||cards[0];}
 function learningList(id,items){$(id).replaceChildren(...items.map(text=>{const item=document.createElement('li');item.textContent=text;return item;}));}
 function renderLearningActionSelection(){
@@ -259,7 +310,7 @@ function restoreLearningDraftAfterExternalInput(){
 function renderLearning(){
   const card=learningCard(),knowledge=getCardKnowledge(card),open=learning.detailOpen,confirmed=learning.confirmed;
   $('learning-overlay').hidden=!learning.active;$('learning-toggle').setAttribute('aria-pressed',String(learning.active));
-  document.body.classList.toggle('learning-active',learning.active);document.querySelector('main').inert=learning.active;document.querySelector('body>footer').inert=learning.active;
+  document.body.classList.toggle('learning-active',learning.active);syncModalInert();
   if(!learning.active)return;
   $('learning-count').textContent=`${String(learning.index+1).padStart(2,'0')} / ${cards.length}`;$('learning-family').textContent=card.category;
   $('learning-card').dataset.family=card.category;$('learning-card').innerHTML=renderCardFace(card);
@@ -350,7 +401,7 @@ function dispatch(action,source){
 }
 function openSetup(source){if(state.phase==='configuring')return dispatch('setup',source);if(state.phase==='spread-selecting')return true;if(state.phase==='selecting')return focusQuestion();$('stage-message').textContent=state.phase==='idle'?'先按 S1 开始。':'按 S1 开始新一轮后再选择牌阵。';return false;}
 function showResultStep(action){if(state.phase!=='revealed'||!['left','right'].includes(action))return false;if(scrollReadingContent(action))return true;resultFocus=(resultFocus+(action==='left'?-1:1)+state.results.length)%state.results.length;renderResultDetail();return true;}
-function performAction(action,source){if(action==='learning')return toggleLearning(source);if(learning.active)return performLearningAction(action,source);if(action==='history')return toggleHistoryTool(source);if(historyToolOpen&&['left','right'].includes(action))return moveHistoryTool(action,source);if(historyToolOpen&&action==='confirm')return confirmHistoryTool(source);if(historyToolOpen)setHistoryToolOpen(false,source);if(action==='start')playGreeting();if(action==='setup')return openSetup(source);if(action==='reading')return enterReading(source);if(action==='question')return state.phase==='revealed'?focusFollowUp(source):focusQuestion();if(action==='confirm'&&state.phase==='selecting'&&!state.question)return confirmQuestion(source);if(showResultStep(action))return true;if(action==='confirm'&&document.activeElement===$('follow-up')){void sendFollowUp();return true;}if(action==='confirm'&&document.activeElement===$('question-draft'))return confirmQuestion(source);return dispatch(action,source);}
+function performAction(action,source){if(action==='insights')return toggleInsights(source);if(insights.active)return performInsightAction(action,source);if(action==='learning')return toggleLearning(source);if(learning.active)return performLearningAction(action,source);if(action==='history')return toggleHistoryTool(source);if(historyToolOpen&&['left','right'].includes(action))return moveHistoryTool(action,source);if(historyToolOpen&&action==='confirm')return confirmHistoryTool(source);if(historyToolOpen)setHistoryToolOpen(false,source);if(action==='start')playGreeting();if(action==='setup')return openSetup(source);if(action==='reading')return enterReading(source);if(action==='question')return state.phase==='revealed'?focusFollowUp(source):focusQuestion();if(action==='confirm'&&state.phase==='selecting'&&!state.question)return confirmQuestion(source);if(showResultStep(action))return true;if(action==='confirm'&&document.activeElement===$('follow-up')){void sendFollowUp();return true;}if(action==='confirm'&&document.activeElement===$('question-draft'))return confirmQuestion(source);return dispatch(action,source);}
 function mainAction(){if(state.phase==='idle'||state.phase==='revealed')return 'start';if(state.phase==='configuring')return 'setup';return 'confirm';}
 $('main-action').addEventListener('click',()=>performAction(mainAction(),'鼠标／触控'));
 $('question-action').addEventListener('click',()=>performAction('question','鼠标／触控'));
@@ -358,42 +409,50 @@ $('previous').addEventListener('click',()=>performAction('left','鼠标／触控
 $('next').addEventListener('click',()=>performAction('right','鼠标／触控'));
 $('new-round').addEventListener('click',()=>performAction('start','鼠标／触控'));
 $('learning-toggle').addEventListener('click',()=>performAction('learning','鼠标／触控'));
+$('insights-toggle').addEventListener('click',()=>performAction('insights','鼠标／触控'));
+$('insights-exit').addEventListener('click',()=>performAction('insights','鼠标／触控'));
+$('insights-generate').addEventListener('click',()=>performAction('confirm','鼠标／触控'));
+$('insights-retry').addEventListener('click',()=>generateInsight());
+for(const button of $('insights-range-options').children)button.addEventListener('click',()=>{insightGenerationToken++;insights=insightTransition(insights,{type:'select-range',index:Number(button.dataset.rangeIndex)});renderInsights();});
 $('learning-exit').addEventListener('click',()=>performAction('learning','鼠标／触控'));
 $('learning-previous').addEventListener('click',()=>performAction('left','鼠标／触控'));
 $('learning-next').addEventListener('click',()=>performAction('right','鼠标／触控'));
 $('learning-open').addEventListener('click',()=>performAction('confirm','鼠标／触控'));
-$('learning-draft').addEventListener('input',event=>{if(consumeLearningCommand($('learning-draft')))return;if(syncLearningDraftField())learningActionIndex=1;renderLearningActionSelection();$('learning-knob-context').textContent=learning.draft.trim()?'旋钮左右 · 选择清空或确认；短按执行':'旋钮左右 · 换牌并重新观察';if(!event.isComposing)$('learning-status').textContent='可以继续修改；确认后才显示参考解读。';});
+$('learning-draft').addEventListener('input',event=>{if(consumeModeCommand($('learning-draft')))return;if(syncLearningDraftField())learningActionIndex=1;renderLearningActionSelection();$('learning-knob-context').textContent=learning.draft.trim()?'旋钮左右 · 选择清空或确认；短按执行':'旋钮左右 · 换牌并重新观察';if(!event.isComposing)$('learning-status').textContent='可以继续修改；确认后才显示参考解读。';});
 $('learning-draft').addEventListener('compositionend',()=>requestAnimationFrame(settleLearningDraft));
 $('learning-draft').addEventListener('change',()=>requestAnimationFrame(settleLearningDraft));
 $('learning-clear').addEventListener('click',clearLearningDraft);
 $('learning-submit').addEventListener('click',submitLearning);
 function receiveFixedText(value){
-  const command=fixedTextAction(value);if(!command)return false;$('command-input').value='';$('learning-command-input').value='';received++;accepted++;
-  const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读'],history:['5','历史备份'],learning:['6','学习模式']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
+  const command=fixedTextAction(value);if(!command)return false;$('command-input').value='';$('learning-command-input').value='';$('insights-command-input').value='';received++;accepted++;
+  const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读'],history:['5','历史备份'],learning:['6','学习模式'],insights:['7','周期洞察']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
   logs.unshift(`${new Date().toLocaleTimeString('zh-CN',{hour12:false})}  S${meta[0]}“${meta[1]}”  → ${outcome}`);logs=logs.slice(0,20);updateLog();return true;
 }
-function consumeLearningCommand(field){
-  const match=field.value.match(/(?:S6\s*)?学习\s*模式\s*$/);if(!match)return false;
-  field.value=field.value.slice(0,match.index);return receiveFixedText('学习模式');
+function consumeModeCommand(field){
+  const match=field.value.match(/(?:(?:S6\s*)?学习\s*模式|(?:S7\s*)?周期\s*洞察)\s*$/);if(!match)return false;
+  const command=/周期/.test(match[0])?'周期洞察':'学习模式';field.value=field.value.slice(0,match.index);return receiveFixedText(command);
 }
 function consumeFollowUpCommand(field){
-  if(consumeLearningCommand(field))return true;
+  if(consumeModeCommand(field))return true;
   const value=field.value,normalized=value.replaceAll(/\s/g,'');
   if(!['综合解读','S4综合解读','历史备份','S5历史备份'].includes(normalized))return false;
   field.value='';return receiveFixedText(value);
 }
 function routeCommandInput(field=$('command-input')){
   const value=field.value;if(!value)return false;if(receiveFixedText(value))return true;
+  if(insights.active){field.value='';renderInsights();return false;}
   if(learning.active){field.value='';if(!learning.detailOpen||learning.confirmed){renderLearning();return false;}learning=learningTransition(learning,{type:'set-draft',value:learning.draft+value},cards.length);saveLearning();renderLearning();$('learning-draft').focus({preventScroll:true});$('learning-status').textContent='S3 语音转写已进入“我的理解”；确认以前仍可修改。';return true;}
   if(state.phase!=='revealed'||!readingSession)return false;
   readingMode=true;$('follow-up').value=($('follow-up').value+value).slice(0,maxQuestionLength);$('command-input').value='';$('follow-up').focus({preventScroll:true});scrollReadingIntoView($('follow-up'));$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';return true;
 }
 $('command-input').addEventListener('input',()=>routeCommandInput($('command-input')));
 $('learning-command-input').addEventListener('input',()=>routeCommandInput($('learning-command-input')));
-let observedCommandValue='',observedLearningCommandValue='',observedFollowUpValue='';
+$('insights-command-input').addEventListener('input',()=>routeCommandInput($('insights-command-input')));
+let observedCommandValue='',observedLearningCommandValue='',observedInsightsCommandValue='',observedFollowUpValue='';
 setInterval(()=>{
   const commandValue=$('command-input').value;if(commandValue&&commandValue===observedCommandValue)routeCommandInput($('command-input'));observedCommandValue=$('command-input').value;
   const learningCommandValue=$('learning-command-input').value;if(learningCommandValue&&learningCommandValue===observedLearningCommandValue)routeCommandInput($('learning-command-input'));observedLearningCommandValue=$('learning-command-input').value;
+  const insightsCommandValue=$('insights-command-input').value;if(insightsCommandValue&&insightsCommandValue===observedInsightsCommandValue)routeCommandInput($('insights-command-input'));observedInsightsCommandValue=$('insights-command-input').value;
   const learningDraftValue=$('learning-draft').value;if(learning.active&&learning.detailOpen&&!learning.confirmed&&learningDraftValue!==learning.draft)syncLearningDraftField('S3 语音转写已进入“我的理解”；确认以前仍可修改。');
   const followUp=$('follow-up'),followUpValue=followUp.value;if(state.phase==='revealed'&&readingSession&&followUpValue&&followUpValue!==observedFollowUpValue&&!consumeFollowUpCommand(followUp)){readingMode=true;followUp.focus({preventScroll:true});scrollReadingIntoView(followUp);$('ai-reading-status').textContent='S3 语音转写已进入追问框。核对后短按旋钮发送。';}observedFollowUpValue=followUp.value;
 },120);
@@ -404,7 +463,7 @@ document.addEventListener('paste',event=>{
 $('browser-listen').addEventListener('click',startRecognition);
 $('stop-listening').addEventListener('click',()=>{stopRecognition();setQuestionStatus('stopped',$('question-draft').value.trim()?'聆听已停止。可以修改文字，再确认问题。':'聆听已停止。可以重试或直接输入问题。');});
 $('clear-question').addEventListener('click',()=>{stopRecognition(true);$('question-draft').value='';setQuestionStatus('stopped','问题文字已清空，当前占卜中的已确认问题不会改变。');$('question-draft').focus();});
-$('question-draft').addEventListener('input',()=>{if(consumeLearningCommand($('question-draft')))return;if(questionStatus!=='listening')setQuestionStatus($('question-draft').value.trim()?'reviewing':'stopped',$('question-draft').value.trim()?'可以继续修改；短按旋钮或点击确认后才会写入本次占卜。':'尚无问题文字。可以按 S3 语音输入，或直接打字。');});
+$('question-draft').addEventListener('input',()=>{if(consumeModeCommand($('question-draft')))return;if(questionStatus!=='listening')setQuestionStatus($('question-draft').value.trim()?'reviewing':'stopped',$('question-draft').value.trim()?'可以继续修改；短按旋钮或点击确认后才会写入本次占卜。':'尚无问题文字。可以按 S3 语音输入，或直接打字。');});
 function confirmQuestion(source){
   const value=$('question-draft').value.trim();if(!value){$('stage-message').textContent=`${source} · 请先输入并确认问题。`;setQuestionStatus('stopped','还没有问题文字。请先按 S3 说话，或直接输入。');commandFocus();return false;}
   stopRecognition(true);const next=transition(state,{type:'set-question',value});if(next!==state){state=next;saveState();render();}
@@ -429,11 +488,11 @@ function updateLog(){
 }
 document.addEventListener('keydown',event=>{
   const interactive=event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]');
-  if(acceptsHardwareCommand()&&![$('command-input'),$('learning-command-input')].includes(document.activeElement)&&!interactive&&!event.ctrlKey&&!event.metaKey&&!event.altKey)commandFocus();
+  if(acceptsHardwareCommand()&&![$('command-input'),$('learning-command-input'),$('insights-command-input')].includes(document.activeElement)&&!interactive&&!event.ctrlKey&&!event.metaKey&&!event.altKey)commandFocus();
 },true);
 document.addEventListener('keydown',event=>{
-  const interactive=event.target.closest('button,a,input,textarea,select,[contenteditable="true"],summary'),questionConfirm=interactive?.id==='question-draft'&&['Enter','NumpadEnter'].includes(event.code),questionShortcut=interactive?.id==='question-draft'&&['Digit3','Numpad3'].includes(event.code),followUpConfirm=interactive?.id==='follow-up'&&['Enter','NumpadEnter'].includes(event.code),followUpShortcut=interactive?.id==='follow-up'&&['Digit3','Numpad3'].includes(event.code),followUpScroll=interactive?.id==='follow-up'&&['ArrowLeft','ArrowRight'].includes(event.code),learningShortcut=interactive?.id==='learning-draft'&&['Digit3','Numpad3'].includes(event.code),learningKnobChoice=interactive?.id==='learning-draft'&&['ArrowLeft','ArrowRight'].includes(event.code),learningKnobConfirm=interactive?.id==='learning-draft'&&['Enter','NumpadEnter'].includes(event.code),learningToggleShortcut=['command-input','learning-command-input'].includes(interactive?.id)&&['Digit6','Numpad6'].includes(event.code),historyShortcut=interactive?.id==='command-input'&&['Digit5','Numpad5'].includes(event.code),commandKey=['command-input','learning-command-input'].includes(interactive?.id);
-  if(interactive&&interactive.id!=='test-only'&&!questionConfirm&&!questionShortcut&&!followUpConfirm&&!followUpShortcut&&!followUpScroll&&!learningShortcut&&!learningKnobChoice&&!learningKnobConfirm&&!learningToggleShortcut&&!historyShortcut&&!commandKey)return;const input=keyInput(event,held);if(!input)return;event.preventDefault();received++;let outcome;
+  const interactive=event.target.closest('button,a,input,textarea,select,[contenteditable="true"],summary'),questionConfirm=interactive?.id==='question-draft'&&['Enter','NumpadEnter'].includes(event.code),questionShortcut=interactive?.id==='question-draft'&&['Digit3','Numpad3'].includes(event.code),followUpConfirm=interactive?.id==='follow-up'&&['Enter','NumpadEnter'].includes(event.code),followUpShortcut=interactive?.id==='follow-up'&&['Digit3','Numpad3'].includes(event.code),followUpScroll=interactive?.id==='follow-up'&&['ArrowLeft','ArrowRight'].includes(event.code),learningShortcut=interactive?.id==='learning-draft'&&['Digit3','Numpad3'].includes(event.code),learningKnobChoice=interactive?.id==='learning-draft'&&['ArrowLeft','ArrowRight'].includes(event.code),learningKnobConfirm=interactive?.id==='learning-draft'&&['Enter','NumpadEnter'].includes(event.code),modeToggleShortcut=['command-input','learning-command-input','insights-command-input'].includes(interactive?.id)&&['Digit6','Numpad6','Digit7','Numpad7'].includes(event.code),historyShortcut=interactive?.id==='command-input'&&['Digit5','Numpad5'].includes(event.code),commandKey=['command-input','learning-command-input','insights-command-input'].includes(interactive?.id);
+  if(interactive&&interactive.id!=='test-only'&&!questionConfirm&&!questionShortcut&&!followUpConfirm&&!followUpShortcut&&!followUpScroll&&!learningShortcut&&!learningKnobChoice&&!learningKnobConfirm&&!modeToggleShortcut&&!historyShortcut&&!commandKey)return;const input=keyInput(event,held);if(!input)return;event.preventDefault();received++;let outcome;
   if(input.duplicate){duplicates++;outcome='忽略重复（长按／尚未松开）';}
   else{
     accepted++;const canonical=input.code.replace('Numpad','Digit').replace('DigitEnter','Enter');hits.set(canonical,(hits.get(canonical)||0)+1);const tile=[...$('key-monitor').children].find(el=>el.dataset.code===canonical);
@@ -450,7 +509,7 @@ document.addEventListener('visibilitychange',()=>{focusStatus();if(!document.hid
 document.addEventListener('pointerup',event=>{if(['idle','configuring'].includes(state.phase)&&!event.target.closest('button,a,input,textarea,select,summary,[contenteditable="true"]'))requestAnimationFrame(commandFocus);});
 $('clear-log').addEventListener('click',()=>{received=accepted=duplicates=0;logs=[];hits.clear();for(const tile of $('key-monitor').children)tile.querySelector('small').textContent='0 次';updateLog();});
 $('provider-badge').textContent=readingProvider===apiReadingProvider?'安全服务端接口 · 密钥仅在服务端':'视觉线索模拟接口 · 零模型费用';
-$('question-draft').value=state.question||'';if(state.phase==='revealed')loadReadingSession();render();renderHistory();void loadHistory();focusStatus();
+$('question-draft').value=state.question||'';if(state.phase==='revealed')loadReadingSession();render();renderHistory();renderInsights();void loadHistory();focusStatus();
 if(learning.active)commandFocus();
 else{
   if(state.phase==='configuring'){setQuestionStatus('idle','按 S2 进入牌阵选择。');commandFocus();}
