@@ -1,4 +1,4 @@
-import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,canReceiveHardwareText,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=1.5.0';
+import {cards,spreads,spreadPositions,cardOrientation,fresh,restore,transition,keyInput,fixedTextAction,canReceiveHardwareText,maxQuestionLength,recognitionFailureMessage} from './core.mjs?v=1.6.0';
 import {interpretCard,getCardKnowledge} from './tarot-knowledge.mjs?v=0.8.0';
 import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.8.0';
 import {historyRecordSchemaVersion,createHistoryRecord,upsertHistoryRecord,serializeHistoryBackup,restoreHistoryBackup,openHistoryDatabase,listHistoryRecords,saveHistoryRecord,replaceHistoryRecords} from './history.mjs?v=0.9.0';
@@ -24,7 +24,7 @@ try{learning=restoreLearning(sessionStorage.getItem(learningStorageKey),cards.le
 
 function acceptsHardwareCommand(){return insights.active||learning.active||historyToolOpen||canReceiveHardwareText(state);}
 function userIsEditing(){const active=document.activeElement;return active&&![$('command-input'),$('learning-command-input'),$('insights-command-input')].includes(active)&&active.matches('input,textarea,select,[contenteditable="true"]');}
-function commandFocus(){if(!document.hasFocus())return;if(insights.active){$('insights-command-input').focus({preventScroll:true});return;}if(learning.active){const target=learning.detailOpen&&!learning.confirmed?$('learning-draft'):$('learning-command-input');if(document.activeElement!==target)target.focus({preventScroll:true});return;}if(historyToolOpen){$('command-input').focus({preventScroll:true});return;}if(state.phase==='selecting'&&!state.question){$('question-draft').focus({preventScroll:true});return;}if(userIsEditing())return;if(state.phase==='revealed'&&readingSession){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
+function commandFocus(){if(!document.hasFocus())return;if(insights.active){$('insights-command-input').focus({preventScroll:true});return;}if(learning.active){const target=learning.detailOpen&&!learning.confirmed?$('learning-draft'):$('learning-command-input');if(document.activeElement!==target)target.focus({preventScroll:true});return;}if(historyToolOpen){$('command-input').focus({preventScroll:true});return;}if(state.phase==='selecting'&&!state.question){$('question-draft').focus({preventScroll:true});return;}if(userIsEditing())return;if(state.phase==='revealed'&&readingSession&&readingMode){$('follow-up').focus({preventScroll:true});return;}if(acceptsHardwareCommand())$('command-input').focus({preventScroll:true});}
 function saveState(){try{sessionStorage.setItem(storageKey,JSON.stringify(state));}catch{storageAvailable=false;}}
 function saveLearning(){try{sessionStorage.setItem(learningStorageKey,serializeLearning(learning));}catch{storageAvailable=false;}}
 function currentSpread(){return spreads.find(spread=>spread.id===state.spreadChoice);}
@@ -133,7 +133,7 @@ function setHistoryToolOpen(open,source){
   if(open&&state.phase==='revealed')readingScrollBeforeHistory=document.querySelector('.result-panel').scrollTop;
   historyToolOpen=open;renderHistoryTool();
   if(open){$('stage-message').textContent=`${source} · 旋转选择“保存历史备份”或“从备份恢复”，短按旋钮确认。`;requestAnimationFrame(()=>{$('history-tool').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});$('command-input').focus({preventScroll:true});});}
-  else{$('stage-message').textContent=`${source} · 历史备份工具已关闭，已返回综合解读。`;requestAnimationFrame(()=>{commandFocus();if(state.phase==='revealed')requestAnimationFrame(()=>{document.querySelector('.result-panel').scrollTop=readingScrollBeforeHistory;});});}
+  else{$('stage-message').textContent=`${source} · 历史备份工具已关闭，已返回${readingMode?'综合解读':'牌局结果'}。`;requestAnimationFrame(()=>{commandFocus();if(state.phase==='revealed')requestAnimationFrame(()=>{document.querySelector('.result-panel').scrollTop=readingScrollBeforeHistory;});});}
   return true;
 }
 function toggleHistoryTool(source){return setHistoryToolOpen(!historyToolOpen,source);}
@@ -202,7 +202,7 @@ function primeFollowUpTarget(){if(readingMode&&readingSession)$('follow-up').foc
 function enterReading(source){
   if(state.phase!=='revealed'){$('stage-message').textContent='完成牌阵后才能进入综合解读。';return false;}
   readingMode=true;scrollReadingIntoView();
-  if(readingSession)primeFollowUpTarget();else if(readingStatus!=='loading')void generateReading().then(()=>{scrollReadingIntoView();primeFollowUpTarget();});
+  if(readingSession){renderReading();primeFollowUpTarget();}else if(readingStatus!=='loading')void generateReading().then(()=>{scrollReadingIntoView();primeFollowUpTarget();});
   return true;
 }
 function focusFollowUp(source){
@@ -213,9 +213,9 @@ function focusFollowUp(source){
 function renderReading(){
   if(state.phase!=='revealed')return;
   const ready=Boolean(readingSession),busy=readingStatus==='loading'||readingStatus==='following';
-  $('generate-reading').disabled=busy||ready;$('generate-reading').textContent=readingStatus==='error'?'重试解读':ready?'首次解读已保存':readingStatus==='loading'?'正在生成…':'生成综合解读';
-  $('ai-reading-status').textContent=readingStatus==='loading'?`${readingProvider.label}正在读取已锁定的会话…`:readingStatus==='error'?readingError:ready?`首次结果已保存于当前标签页 · ${readingSession.followUps.length} 次追问 · 旋钮上下浏览，S3 发起追问`:'已锁定问题、牌阵、位置和正逆位。按 S4 或点击按钮生成，不会重新抽牌。';
-  $('ai-output').hidden=!ready;$('follow-up').disabled=!ready||busy;$('send-follow-up').disabled=!ready||busy;
+  $('generate-reading').disabled=busy||ready&&readingMode;$('generate-reading').textContent=readingStatus==='error'?'重试解读':ready&&readingMode?'综合解读已展开':ready?'查看综合解读':readingStatus==='loading'?'正在生成…':'生成综合解读';
+  $('ai-reading-status').textContent=readingStatus==='loading'?`${readingProvider.label}正在读取已锁定的会话…`:readingStatus==='error'?readingError:ready&&readingMode?`首次结果已保存于当前标签页 · ${readingSession.followUps.length} 次追问 · 旋钮上下浏览，S3 发起追问`:ready?'综合解读已安全收起，牌局仍保持锁定。按 S4 或点击按钮可继续查看。':'已锁定问题、牌阵、位置和正逆位。按 S4 或点击按钮生成，不会重新抽牌。';
+  $('ai-output').hidden=!ready||!readingMode;$('follow-up').disabled=!ready||busy;$('send-follow-up').disabled=!ready||busy;
   if(!ready)return;const reading=readingSession.firstReading;
   $('ai-title').textContent=reading.title;$('ai-overview').textContent=reading.overview;$('ai-flow').textContent=reading.flow.movement;$('ai-tension').textContent=reading.flow.tension;$('ai-direction').textContent=reading.flow.direction;$('ai-synthesis').textContent=reading.synthesis;$('voice-summary').textContent=reading.voiceSummary;
   $('ai-card-readings').replaceChildren(...reading.cardReadings.map(item=>{const li=document.createElement('li'),heading=document.createElement('strong');heading.textContent=`${item.position} · ${item.card} · ${item.orientation==='reversed'?'逆位':'正位'}`;for(const [label,text] of [['牌面线索',item.visualReading],['基础牌义',item.baseMeaning],['结合问题',item.contextualReading]]){const section=document.createElement('div'),title=document.createElement('span'),body=document.createElement('p');section.className='ai-card-section';title.textContent=label;body.textContent=text;section.append(title,body);li.append(section);}li.prepend(heading);return li;}));
@@ -359,7 +359,7 @@ function performLearningAction(action,source){
     if(!learning.draft.trim()){$('learning-status').textContent='请先写下自己的理解，再短按旋钮确认。';settleLearningDraft();return false;}
     return learningActionIndex===0?clearLearningDraft():submitLearning();
   }
-  if(!['left','right','confirm'].includes(action)){$('learning-status').textContent='学习模式中：旋钮浏览，短按打开，S3 输入，S6 返回占卜。';return false;}
+  if(!['left','right','confirm'].includes(action)){$('learning-status').textContent='学习模式中：旋钮浏览，短按打开，S3 输入，S8 返回占卜。';return false;}
   const next=learningTransition(learning,action,cards.length);if(next===learning)return false;learning=next;learningActionIndex=1;saveLearning();renderLearning();
   if(action==='confirm')requestAnimationFrame(()=>$('learning-draft').focus({preventScroll:true}));
   else requestAnimationFrame(commandFocus);
@@ -412,36 +412,58 @@ function dispatch(action,source){
 }
 function openSetup(source){if(state.phase==='configuring')return dispatch('setup',source);if(state.phase==='spread-selecting')return true;if(state.phase==='selecting')return focusQuestion();$('stage-message').textContent=state.phase==='idle'?'先按 S1 开始。':'按 S1 开始新一轮后再选择牌阵。';return false;}
 function showResultStep(action){if(state.phase!=='revealed'||!['left','right'].includes(action))return false;if(scrollReadingContent(action))return true;resultFocus=(resultFocus+(action==='left'?-1:1)+state.results.length)%state.results.length;renderResultDetail();return true;}
-function performAction(action,source){if(action==='insights')return toggleInsights(source);if(insights.active)return performInsightAction(action,source);if(action==='learning')return toggleLearning(source);if(learning.active)return performLearningAction(action,source);if(action==='history')return toggleHistoryTool(source);if(historyToolOpen&&['left','right'].includes(action))return moveHistoryTool(action,source);if(historyToolOpen&&action==='confirm')return confirmHistoryTool(source);if(historyToolOpen)setHistoryToolOpen(false,source);if(action==='start')playGreeting();if(action==='setup')return openSetup(source);if(action==='reading')return enterReading(source);if(action==='question')return state.phase==='revealed'?focusFollowUp(source):focusQuestion();if(action==='confirm'&&state.phase==='selecting'&&!state.question)return confirmQuestion(source);if(showResultStep(action))return true;if(action==='confirm'&&document.activeElement===$('follow-up')){void sendFollowUp();return true;}if(action==='confirm'&&document.activeElement===$('question-draft'))return confirmQuestion(source);return dispatch(action,source);}
+function collapseReading(source){if(!readingMode)return false;readingMode=false;renderReading();$('stage-message').textContent=`${source} · 综合解读已收起；当前牌局和追问记录仍保留。`;requestAnimationFrame(()=>{document.querySelector('.result-panel').scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});commandFocus();});return true;}
+function cancelTemporaryAction(source){
+  if(recognition){stopRecognition(true);setQuestionStatus($('question-draft').value.trim()?'reviewing':'stopped',`${source} · 已停止浏览器聆听，尚未确认的文字仍保留。`);return true;}
+  if(state.phase==='selecting'&&!state.question&&$('question-draft').value){$('question-draft').value='';setQuestionStatus('stopped',`${source} · 已清除尚未确认的问题草稿，牌阵选择仍保留。`);commandFocus();return true;}
+  const next=transition(state,'back');if(next===state){$('stage-message').textContent=`${source} · 当前没有需要取消的临时操作。`;return false;}
+  state=next;saveState();render();$('stage-message').textContent=state.phase==='idle'?`${source} · 已返回待机。`:`${source} · 已返回${state.phase==='configuring'?'开始后的准备步骤':'牌阵选择'}。`;setQuestionStatus('idle',state.phase==='configuring'?'按 S2 进入牌阵选择。':'旋转选择牌阵，短按确认。');commandFocus();return true;
+}
+function performBackAction(source){
+  if(learning.active)return toggleLearning(source);
+  if(insights.active)return toggleInsights(source);
+  if(historyToolOpen)return setHistoryToolOpen(false,source);
+  if(selectedHistoryId){selectedHistoryId=null;renderHistory();$('stage-message').textContent=`${source} · 历史详情已关闭，历史记录没有改变。`;return true;}
+  if(collapseReading(source))return true;
+  return cancelTemporaryAction(source);
+}
+function performAction(action,source){
+  if(action==='back')return performBackAction(source);
+  if(insights.active)return action==='insights'?toggleInsights(source):performInsightAction(action,source);
+  if(learning.active)return action==='learning'?toggleLearning(source):performLearningAction(action,source);
+  if(historyToolOpen){if(action==='history')return toggleHistoryTool(source);if(['left','right'].includes(action))return moveHistoryTool(action,source);if(action==='confirm')return confirmHistoryTool(source);$('stage-message').textContent='历史备份工具正在接收输入；请用旋钮操作，或按 S8 返回。';return false;}
+  if(action==='insights')return toggleInsights(source);if(action==='learning')return toggleLearning(source);if(action==='history')return toggleHistoryTool(source);if(action==='start')playGreeting();if(action==='setup')return openSetup(source);if(action==='reading')return enterReading(source);if(action==='question')return state.phase==='revealed'?focusFollowUp(source):focusQuestion();if(action==='confirm'&&state.phase==='selecting'&&!state.question)return confirmQuestion(source);if(showResultStep(action))return true;if(action==='confirm'&&document.activeElement===$('follow-up')){void sendFollowUp();return true;}if(action==='confirm'&&document.activeElement===$('question-draft'))return confirmQuestion(source);return dispatch(action,source);
+}
 function mainAction(){if(state.phase==='idle'||state.phase==='revealed')return 'start';if(state.phase==='configuring')return 'setup';return 'confirm';}
 $('main-action').addEventListener('click',()=>performAction(mainAction(),'鼠标／触控'));
 $('question-action').addEventListener('click',()=>performAction('question','鼠标／触控'));
 $('previous').addEventListener('click',()=>performAction('left','鼠标／触控'));
 $('next').addEventListener('click',()=>performAction('right','鼠标／触控'));
 $('new-round').addEventListener('click',()=>performAction('start','鼠标／触控'));
+$('back-action').addEventListener('click',()=>performAction('back','鼠标／触控'));
 $('learning-toggle').addEventListener('click',()=>performAction('learning','鼠标／触控'));
 $('insights-toggle').addEventListener('click',()=>performAction('insights','鼠标／触控'));
-$('insights-exit').addEventListener('click',()=>performAction('insights','鼠标／触控'));
+$('insights-exit').addEventListener('click',()=>performAction('back','鼠标／触控'));
 $('insights-generate').addEventListener('click',()=>performAction('confirm','鼠标／触控'));
 $('insights-retry').addEventListener('click',()=>generateInsight());
 for(const button of $('insights-range-options').children)button.addEventListener('click',()=>{insightGenerationToken++;insights=insightTransition(insights,{type:'select-range',index:Number(button.dataset.rangeIndex)});renderInsights();});
-$('learning-exit').addEventListener('click',()=>performAction('learning','鼠标／触控'));
+$('learning-exit').addEventListener('click',()=>performAction('back','鼠标／触控'));
 $('learning-previous').addEventListener('click',()=>performAction('left','鼠标／触控'));
 $('learning-next').addEventListener('click',()=>performAction('right','鼠标／触控'));
 $('learning-open').addEventListener('click',()=>performAction('confirm','鼠标／触控'));
 $('learning-draft').addEventListener('input',event=>{if(consumeModeCommand($('learning-draft')))return;if(syncLearningDraftField())learningActionIndex=1;renderLearningActionSelection();$('learning-knob-context').textContent=learning.draft.trim()?'旋钮左右 · 选择清空或确认；短按执行':'旋钮左右 · 换牌并重新观察';if(!event.isComposing)$('learning-status').textContent='可以继续修改；确认后才显示参考解读。';});
 $('learning-draft').addEventListener('compositionend',()=>requestAnimationFrame(settleLearningDraft));
 $('learning-draft').addEventListener('change',()=>requestAnimationFrame(settleLearningDraft));
-$('learning-clear').addEventListener('click',clearLearningDraft);
-$('learning-submit').addEventListener('click',submitLearning);
+$('learning-clear').addEventListener('click',()=>{learningActionIndex=0;performAction('confirm','鼠标／触控');});
+$('learning-submit').addEventListener('click',()=>{learningActionIndex=1;performAction('confirm','鼠标／触控');});
 function receiveFixedText(value){
   const command=fixedTextAction(value);if(!command)return false;$('command-input').value='';$('learning-command-input').value='';$('insights-command-input').value='';received++;accepted++;
-  const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读'],history:['5','历史备份'],learning:['6','学习模式'],insights:['7','周期洞察']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
+  const meta={start:['1','开始'],setup:['2','牌阵选择'],reading:['4','综合解读'],history:['5','历史备份'],learning:['6','学习模式'],insights:['7','周期洞察'],back:['8','返回']}[command],outcome=$('test-only').checked?'仅测试，不改变流程':performAction(command,`EasyInput S${meta[0]}`)?'执行成功':'状态锁定／条件未满足';
   logs.unshift(`${new Date().toLocaleTimeString('zh-CN',{hour12:false})}  S${meta[0]}“${meta[1]}”  → ${outcome}`);logs=logs.slice(0,20);updateLog();return true;
 }
 function consumeModeCommand(field){
-  const match=field.value.match(/(?:(?:S6\s*)?学习\s*模式|(?:S7\s*)?周期\s*洞察)\s*$/);if(!match)return false;
-  const command=/周期/.test(match[0])?'周期洞察':'学习模式';field.value=field.value.slice(0,match.index);return receiveFixedText(command);
+  const match=field.value.match(/(?:(?:S6\s*)?学习\s*模式|(?:S7\s*)?周期\s*洞察|(?:S8\s*)?返\s*回)\s*$/);if(!match)return false;
+  const command=/返\s*回/.test(match[0])?'返回':/周期/.test(match[0])?'周期洞察':'学习模式';field.value=field.value.slice(0,match.index);return receiveFixedText(command);
 }
 function consumeFollowUpCommand(field){
   if(consumeModeCommand(field))return true;
@@ -485,13 +507,13 @@ $('generate-reading').addEventListener('click',()=>enterReading('鼠标／触控
 $('send-follow-up').addEventListener('click',sendFollowUp);
 $('follow-up').addEventListener('input',()=>{if(consumeFollowUpCommand($('follow-up')))return;if(readingMode&&$('follow-up').value.trim())scrollReadingIntoView($('follow-up'));});
 $('history-tool-toggle').addEventListener('click',()=>toggleHistoryTool('鼠标／触控'));
-$('history-export').addEventListener('click',()=>{historyToolIndex=0;renderHistoryTool();exportHistory();});
-$('history-restore').addEventListener('click',()=>{historyToolIndex=1;renderHistoryTool();$('history-import').click();});
+$('history-export').addEventListener('click',()=>{historyToolIndex=0;renderHistoryTool();performAction('confirm','鼠标／触控');});
+$('history-restore').addEventListener('click',()=>{historyToolIndex=1;renderHistoryTool();performAction('confirm','鼠标／触控');});
 $('history-import').addEventListener('change',importHistory);
 $('history-retry').addEventListener('click',retryHistory);
-$('history-close').addEventListener('click',()=>{selectedHistoryId=null;renderHistory();});
+$('history-close').addEventListener('click',()=>performAction('back','鼠标／触控'));
 $('show-input').addEventListener('click',()=>{const open=$('input-panel').hidden;$('input-panel').hidden=!open;$('show-input').setAttribute('aria-expanded',String(open));if(open)$('input-panel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'nearest'});});
-const codes=[...Array.from({length:8},(_,i)=>'Digit'+(i+1)),'ArrowLeft','ArrowRight','Enter'];
+const codes=[...Array.from({length:8},(_,i)=>'Digit'+(i+1)),'Escape','ArrowLeft','ArrowRight','Enter'];
 for(const code of codes){const key=document.createElement('div');key.className='monitor-key';key.dataset.code=code;key.innerHTML=`${code.startsWith('Digit')?code.slice(-1):code==='ArrowLeft'?'←':code==='ArrowRight'?'→':'Enter'}<small>0 次</small>`;$('key-monitor').append(key);}
 function updateLog(){
   $('input-counts').textContent=`收到 ${received} 次 · 接受 ${accepted} 次 · 忽略重复 ${duplicates} 次`;const nodes=logs.map(line=>{const li=document.createElement('li');li.textContent=line;return li;});
@@ -502,8 +524,8 @@ document.addEventListener('keydown',event=>{
   if(acceptsHardwareCommand()&&![$('command-input'),$('learning-command-input'),$('insights-command-input')].includes(document.activeElement)&&!interactive&&!event.ctrlKey&&!event.metaKey&&!event.altKey)commandFocus();
 },true);
 document.addEventListener('keydown',event=>{
-  const interactive=event.target.closest('button,a,input,textarea,select,[contenteditable="true"],summary'),questionConfirm=interactive?.id==='question-draft'&&['Enter','NumpadEnter'].includes(event.code),questionShortcut=interactive?.id==='question-draft'&&['Digit3','Numpad3'].includes(event.code),followUpConfirm=interactive?.id==='follow-up'&&['Enter','NumpadEnter'].includes(event.code),followUpShortcut=interactive?.id==='follow-up'&&['Digit3','Numpad3'].includes(event.code),followUpScroll=interactive?.id==='follow-up'&&['ArrowLeft','ArrowRight'].includes(event.code),learningShortcut=interactive?.id==='learning-draft'&&['Digit3','Numpad3'].includes(event.code),learningKnobChoice=interactive?.id==='learning-draft'&&['ArrowLeft','ArrowRight'].includes(event.code),learningKnobConfirm=interactive?.id==='learning-draft'&&['Enter','NumpadEnter'].includes(event.code),modeToggleShortcut=['command-input','learning-command-input','insights-command-input'].includes(interactive?.id)&&['Digit6','Numpad6','Digit7','Numpad7'].includes(event.code),historyShortcut=interactive?.id==='command-input'&&['Digit5','Numpad5'].includes(event.code),commandKey=['command-input','learning-command-input','insights-command-input'].includes(interactive?.id);
-  if(interactive&&interactive.id!=='test-only'&&!questionConfirm&&!questionShortcut&&!followUpConfirm&&!followUpShortcut&&!followUpScroll&&!learningShortcut&&!learningKnobChoice&&!learningKnobConfirm&&!modeToggleShortcut&&!historyShortcut&&!commandKey)return;const input=keyInput(event,held);if(!input)return;event.preventDefault();received++;let outcome;
+  const interactive=event.target.closest('button,a,input,textarea,select,[contenteditable="true"],summary'),questionConfirm=interactive?.id==='question-draft'&&['Enter','NumpadEnter'].includes(event.code),questionShortcut=interactive?.id==='question-draft'&&['Digit3','Numpad3'].includes(event.code),followUpConfirm=interactive?.id==='follow-up'&&['Enter','NumpadEnter'].includes(event.code),followUpShortcut=interactive?.id==='follow-up'&&['Digit3','Numpad3'].includes(event.code),followUpScroll=interactive?.id==='follow-up'&&['ArrowLeft','ArrowRight'].includes(event.code),learningShortcut=interactive?.id==='learning-draft'&&['Digit3','Numpad3'].includes(event.code),learningKnobChoice=interactive?.id==='learning-draft'&&['ArrowLeft','ArrowRight'].includes(event.code),learningKnobConfirm=interactive?.id==='learning-draft'&&['Enter','NumpadEnter'].includes(event.code),modeToggleShortcut=['command-input','learning-command-input','insights-command-input'].includes(interactive?.id)&&['Digit6','Numpad6','Digit7','Numpad7'].includes(event.code),historyShortcut=interactive?.id==='command-input'&&['Digit5','Numpad5'].includes(event.code),backShortcut=['Escape','Digit8','Numpad8'].includes(event.code),commandKey=['command-input','learning-command-input','insights-command-input'].includes(interactive?.id);
+  if(interactive&&interactive.id!=='test-only'&&!questionConfirm&&!questionShortcut&&!followUpConfirm&&!followUpShortcut&&!followUpScroll&&!learningShortcut&&!learningKnobChoice&&!learningKnobConfirm&&!modeToggleShortcut&&!historyShortcut&&!backShortcut&&!commandKey)return;const input=keyInput(event,held);if(!input)return;event.preventDefault();received++;let outcome;
   if(input.duplicate){duplicates++;outcome='忽略重复（长按／尚未松开）';}
   else{
     accepted++;const canonical=input.code.replace('Numpad','Digit').replace('DigitEnter','Enter');hits.set(canonical,(hits.get(canonical)||0)+1);const tile=[...$('key-monitor').children].find(el=>el.dataset.code===canonical);

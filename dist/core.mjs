@@ -31,6 +31,7 @@ export const spreadPositions={
 };
 export function fixedTextAction(value){
   const normalized=typeof value==='string'?value.replaceAll(/\s/g,''):'';
+  if(['返回','S8返回'].includes(normalized))return 'back';
   if(['周期洞察','S7周期洞察'].includes(normalized))return 'insights';
   if(['学习模式','S6学习模式'].includes(normalized))return 'learning';
   if(['历史备份','S5历史备份'].includes(normalized))return 'history';
@@ -64,6 +65,12 @@ function nextAvailable(state,direction){
 }
 export function transition(state,action,random=Math.random){
   if(action==='reset') return fresh();
+  if(action==='back'){
+    if(state.phase==='configuring')return fresh();
+    if(state.phase==='spread-selecting')return {...fresh(),phase:'configuring'};
+    if(state.phase==='selecting'&&!state.question)return {...fresh(),phase:'spread-selecting',spreadIndex:state.spreadIndex};
+    return state;
+  }
   if(action?.type==='set-question'){
     if(state.phase!=='selecting')return state;
     const question=typeof action.value==='string'?action.value.trim():'';
@@ -130,10 +137,10 @@ export function restore(raw){try{
 }catch{return fresh();}}
 export function keyInput(event,held){
   const code=event.code;
-  const monitored=/^(Digit|Numpad)[1-8]$/.test(code)||['ArrowLeft','ArrowRight','Enter','NumpadEnter'].includes(code);
+  const monitored=/^(Digit|Numpad)[1-8]$/.test(code)||['Escape','ArrowLeft','ArrowRight','Enter','NumpadEnter'].includes(code);
   if(!monitored||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey)return null;
   if(event.repeat||held.has(code))return {code,duplicate:true};
   held.add(code);
-  const action=code==='Digit1'||code==='Numpad1'?'start':code==='Digit2'||code==='Numpad2'?'setup':code==='Digit3'||code==='Numpad3'?'question':code==='Digit4'||code==='Numpad4'?'reading':code==='Digit5'||code==='Numpad5'?'history':code==='Digit6'||code==='Numpad6'?'learning':code==='Digit7'||code==='Numpad7'?'insights':code==='ArrowLeft'?'left':code==='ArrowRight'?'right':code==='Enter'||code==='NumpadEnter'?'confirm':null;
+  const action=code==='Digit1'||code==='Numpad1'?'start':code==='Digit2'||code==='Numpad2'?'setup':code==='Digit3'||code==='Numpad3'?'question':code==='Digit4'||code==='Numpad4'?'reading':code==='Digit5'||code==='Numpad5'?'history':code==='Digit6'||code==='Numpad6'?'learning':code==='Digit7'||code==='Numpad7'?'insights':code==='Digit8'||code==='Numpad8'||code==='Escape'?'back':code==='ArrowLeft'?'left':code==='ArrowRight'?'right':code==='Enter'||code==='NumpadEnter'?'confirm':null;
   return {code,duplicate:false,action};
 }
