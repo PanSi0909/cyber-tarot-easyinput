@@ -61,6 +61,11 @@ test('应用引用的页面元素 ID 全部存在',()=>{
   assert.deepEqual([...referenced].filter(id=>!ids.has(id)),[]);
 });
 
+test('输入验证面板正确区分 Escape 与 Enter',()=>{
+  const app=read('dist/app.mjs');
+  assert.match(app,/code==='Escape'\?'Esc'/);
+});
+
 test('结课材料包含键位、状态、AI 边界、演示与主对话待办',()=>{
   const guide=read('dist/guide.html'),delivery=read('COURSE-8-DELIVERY.md');
   assert.match(guide,/S8 返回 \/ 取消/);

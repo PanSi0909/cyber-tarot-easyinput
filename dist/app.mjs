@@ -514,7 +514,7 @@ $('history-retry').addEventListener('click',retryHistory);
 $('history-close').addEventListener('click',()=>performAction('back','鼠标／触控'));
 $('show-input').addEventListener('click',()=>{const open=$('input-panel').hidden;$('input-panel').hidden=!open;$('show-input').setAttribute('aria-expanded',String(open));if(open)$('input-panel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'nearest'});});
 const codes=[...Array.from({length:8},(_,i)=>'Digit'+(i+1)),'Escape','ArrowLeft','ArrowRight','Enter'];
-for(const code of codes){const key=document.createElement('div');key.className='monitor-key';key.dataset.code=code;key.innerHTML=`${code.startsWith('Digit')?code.slice(-1):code==='ArrowLeft'?'←':code==='ArrowRight'?'→':'Enter'}<small>0 次</small>`;$('key-monitor').append(key);}
+for(const code of codes){const key=document.createElement('div');key.className='monitor-key';key.dataset.code=code;key.innerHTML=`${code.startsWith('Digit')?code.slice(-1):code==='Escape'?'Esc':code==='ArrowLeft'?'←':code==='ArrowRight'?'→':'Enter'}<small>0 次</small>`;$('key-monitor').append(key);}
 function updateLog(){
   $('input-counts').textContent=`收到 ${received} 次 · 接受 ${accepted} 次 · 忽略重复 ${duplicates} 次`;const nodes=logs.map(line=>{const li=document.createElement('li');li.textContent=line;return li;});
   if(!nodes.length){const li=document.createElement('li');li.className='log-empty';li.textContent='还没有输入记录';nodes.push(li);}$('event-log').replaceChildren(...nodes);
