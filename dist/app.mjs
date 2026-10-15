@@ -247,7 +247,8 @@ function renderInsights(){
   const range=insightRanges[insights.rangeIndex],labels={idle:'等待选择',loading:'正在生成',ready:'已生成',insufficient:'数据不足',error:'失败'};
   $('insights-status').dataset.state=insights.status;$('insights-status').textContent=labels[insights.status]||insights.status;
   $('insights-message').textContent=insights.status==='idle'?`${range.label} · 选择后短按旋钮或点击生成。`:insights.status==='loading'?`正在根据 ${range.label} 的客观统计生成反思洞察…`:insights.status==='insufficient'?`当前只有 ${insights.analysis?.recordCount||0} 条记录；至少还需要 ${insights.analysis?.needed||0} 条完整记录。`:insights.status==='error'?insights.error:`${range.label}的周期洞察已生成。`;
-  $('insights-generate').disabled=insights.status==='loading'||!historyLoaded;$('insights-generate').textContent=insights.status==='loading'?'正在生成…':'确认并生成洞察';$('insights-retry').hidden=insights.status!=='error';
+  const ready=insights.status==='ready';$('insights-knob-context').textContent=ready?'旋钮左右 · 浏览洞察；短按 · 重新选择范围':'旋钮左右 · 选择时间范围；短按 · 生成洞察';
+  $('insights-generate').disabled=insights.status==='loading'||!historyLoaded;$('insights-generate').textContent=insights.status==='loading'?'正在生成…':ready?'重新选择时间范围（鼠标／触控）':'使用当前范围生成（鼠标／触控）';$('insights-retry').hidden=insights.status!=='error';
   const analysis=insights.analysis;$('insights-statistics').hidden=!analysis;
   if(analysis){
     $('insights-record-count').textContent=`${analysis.recordCount} 条记录`;$('insights-start').textContent=formatInsightDate(analysis.range.start);$('insights-end').textContent=formatInsightDate(analysis.range.end);$('insights-sample-count').textContent=analysis.sufficient?`${analysis.recordCount} 条 · 达到最小样本`:`${analysis.recordCount} 条 · 还差 ${analysis.needed} 条`;
@@ -267,7 +268,17 @@ function toggleInsights(source){
   else requestAnimationFrame(()=>{commandFocus();$('insights-range-options').scrollIntoView({behavior:'auto',block:'center'});});
   if(!historyLoaded&&historyStatus!=='loading')void loadHistory();return true;
 }
+function scrollInsightContent(action,source){
+  const overlay=$('insights-overlay'),distance=Math.max(240,overlay.clientHeight*.55),behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+  overlay.scrollBy({top:action==='right'?distance:-distance,behavior});$('insights-message').textContent=`${source} · 正在${action==='right'?'向下':'向上'}浏览洞察；短按旋钮可重新选择时间范围。`;return true;
+}
+function resetInsightRangeSelection(source){
+  insightGenerationToken++;insights=insightTransition(insights,{type:'select-range',index:insights.rangeIndex});renderInsights();$('insights-message').textContent=`${source} · 已返回时间范围选择。`;
+  const behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';$('insights-overlay').scrollTo({top:0,behavior});requestAnimationFrame(commandFocus);return true;
+}
 function performInsightAction(action,source){
+  if(insights.status==='ready'&&['left','right'].includes(action))return scrollInsightContent(action,source);
+  if(insights.status==='ready'&&action==='confirm')return resetInsightRangeSelection(source);
   if(['left','right'].includes(action)){insightGenerationToken++;insights=insightTransition(insights,action);renderInsights();$('insights-message').textContent=`${source} · 已选择${insightRanges[insights.rangeIndex].label}，短按旋钮生成。`;return true;}
   if(action==='confirm'){void generateInsight();return true;}
   return false;
@@ -280,7 +291,7 @@ async function generateInsight(){
   const token=++insightGenerationToken;insights={...insights,status:'loading',analysis,result:null,error:'',saveMessage:''};renderInsights();
   try{
     const result=await requestInsight(insightProvider,buildInsightSummary(analysis));if(token!==insightGenerationToken||!insights.active)return false;
-    insights={...insights,status:'ready',result,saveMessage:'正在保存到独立周期洞察存储…'};renderInsights();
+    insights={...insights,status:'ready',result,saveMessage:'正在保存到独立周期洞察存储…'};renderInsights();requestAnimationFrame(()=>{$('insights-statistics').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});commandFocus();});
     try{insightDatabase=insightDatabase||await openInsightDatabase();await saveInsightReport(insightDatabase,createInsightReport(analysis,result,insightProvider.id));if(token===insightGenerationToken){insights={...insights,saveMessage:'已独立保存；原始占卜历史未被修改。'};renderInsights();}}
     catch(error){if(token===insightGenerationToken){insights={...insights,saveMessage:`洞察已生成，但独立保存失败：${error?.message||'浏览器存储不可用'}。原始历史未受影响。`};renderInsights();}}
     return true;

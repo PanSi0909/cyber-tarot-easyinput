@@ -19,7 +19,7 @@ function at(record,createdAt,index){return {...structuredClone(record),id:`${rec
 test('S7 固定文字、主键盘、小键盘与鼠标入口使用同一 insights 动作',()=>{
   assert.equal(fixedTextAction('周期洞察'),'insights');assert.equal(fixedTextAction(' S7 周期 洞察 '),'insights');
   assert.equal(keyInput({code:'Digit7'},new Set()).action,'insights');assert.equal(keyInput({code:'Numpad7'},new Set()).action,'insights');
-  const html=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');assert.match(html,/id="insights-toggle"[^>]*>周期洞察 <kbd>S7<\/kbd>/);
+  const html=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');assert.match(html,/id="insights-toggle"[^>]*>周期洞察<\/button>/);
 });
 
 test('旋钮在 7、30、365 天之间循环且不修改其他状态',()=>{
@@ -77,4 +77,17 @@ test('周期洞察页面标注数据来源、独立保存与安全边界',()=>{
   const html=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
   for(const id of ['insights-overlay','insights-command-input','insights-range-options','insights-generate','insights-statistics','insights-output','insights-retry'])assert.match(html,new RegExp(`id="${id}"`));
   assert.match(html,/少于 3 条时只显示数据不足/);assert.match(html,/历史只读 · 洞察独立保存/);
+});
+
+test('洞察生成后旋钮浏览长内容，短按返回范围选择',()=>{
+  const app=readFileSync(new URL('../dist/app.mjs',import.meta.url),'utf8');
+  assert.match(app,/insights\.status==='ready'&&\['left','right'\]\.includes\(action\)\)return scrollInsightContent/);
+  assert.match(app,/insights\.status==='ready'&&action==='confirm'\)return resetInsightRangeSelection/);
+  assert.match(app,/overlay\.scrollBy\(\{top:action==='right'\?distance:-distance,behavior\}\)/);
+});
+
+test('档案工具并列放在顶部且页面入口不重复显示 S5 S6 S7 徽标',()=>{
+  const html=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8'),nav=html.match(/<nav class="utility-nav"[\s\S]*?<\/nav>/)?.[0]||'';
+  for(const id of ['learning-toggle','history-tool-toggle','insights-toggle'])assert.match(nav,new RegExp(`id="${id}"`));
+  assert.doesNotMatch(html,/(?:历史备份|学习模式|周期洞察)\s*<kbd>S[567]<\/kbd>/);
 });

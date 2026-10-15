@@ -9,11 +9,11 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a1018'/%3E%3Cpath d='M16 4 20 12 28 16 20 20 16 28 12 20 4 16 12 12Z' fill='%23b5eadf'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="design-tokens.css?v=1.4.0">
   <script>if(location.protocol==='file:')location.replace('http://127.0.0.1:4173/');</script>
-  <link rel="stylesheet" href="styles.css?v=1.5.0">
-  <script type="module" src="app.mjs?v=1.5.0"></script>
+  <link rel="stylesheet" href="styles.css?v=1.5.1">
+  <script type="module" src="app.mjs?v=1.5.1"></script>
 </head>
 <body>
-  <header class="topbar"><span class="edition">SHANGHAI · CN</span><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✦</span> BETWEEN SIGNALS <span class="brand-en">赛博塔罗</span></a><nav class="utility-nav" aria-label="辅助导航"><button id="learning-toggle" type="button" aria-pressed="false">学习模式 <kbd>S6</kbd></button><button id="insights-toggle" type="button" aria-pressed="false">周期洞察 <kbd>S7</kbd></button><a href="guide.html">使用手册 ↗</a><span class="issue-mark">VOL. 07 / 2026</span></nav></header>
+  <header class="topbar"><span class="edition">SHANGHAI · CN</span><a class="brand" href="./" aria-label="赛博塔罗首页"><span class="brand-mark">✦</span> BETWEEN SIGNALS <span class="brand-en">赛博塔罗</span></a><nav class="utility-nav" aria-label="辅助导航"><button id="learning-toggle" type="button" aria-pressed="false">学习模式</button><button id="history-tool-toggle" type="button" aria-expanded="false" aria-controls="history-tool">历史备份</button><button id="insights-toggle" type="button" aria-pressed="false">周期洞察</button><a href="guide.html">使用手册 ↗</a><span class="issue-mark">VOL. 07 / 2026</span></nav></header>
   <main>
     <section class="intro">
       <div class="hero-copy"><p class="eyebrow">A PRIVATE RITUAL / ISSUE NO. 07</p><h1><span>让直觉</span><em>落在指尖</em></h1><p class="intro-copy">想一件此刻在意的事。转动、停下，翻开属于这一刻的牌。</p></div>
@@ -64,7 +64,6 @@
     <section class="history-panel" aria-labelledby="history-heading">
       <div class="history-header">
         <div><p class="eyebrow">SESSION ARCHIVE</p><h2 id="history-heading">占卜历史</h2><p>首次综合解读成功后自动保存；后续追问会更新同一条记录。</p></div>
-        <button id="history-tool-toggle" class="quiet" type="button" aria-expanded="false" aria-controls="history-tool">历史备份 <kbd>S5</kbd></button>
       </div>
       <section id="history-tool" class="history-tool" hidden aria-labelledby="history-tool-heading">
         <div class="history-tool-copy"><p class="eyebrow">KEEP A COPY</p><h3 id="history-tool-heading">保存或找回占卜历史</h3><p>历史通常只保存在当前浏览器中。清理浏览器数据、换浏览器或换设备前，可以先保存一份备份。</p></div>
@@ -73,7 +72,7 @@
           <button id="history-restore" class="history-tool-option" type="button" role="option" aria-selected="false"><strong>从备份恢复</strong><span>选择以前保存的文件，把记录合并回来</span></button>
           <input id="history-import" type="file" accept="application/json,.json" hidden>
         </div>
-        <p class="history-tool-hint">旋转选择 · 短按旋钮确认 · 再按 S5 关闭</p>
+        <p class="history-tool-hint">旋转选择 · 短按旋钮确认 · 再次打开“历史备份”可关闭</p>
         <details class="history-tool-help"><summary>备份和恢复分别有什么用？</summary><p><strong>保存备份：</strong>下载一份全部历史记录，避免浏览器数据被清理后无法找回。</p><p><strong>从备份恢复：</strong>把之前保存的记录合并到当前历史中，不会先清空现有记录；相同记录会保留更新的一份。</p><p>备份文件使用 JSON 格式，这是电脑读取的数据文件；你不需要打开或编辑它。</p></details>
       </section>
       <div class="history-status-row"><span id="history-status" class="history-status" data-state="loading">正在加载</span><p id="history-message" role="status" aria-live="polite">正在读取本机历史记录…</p><button id="history-retry" class="quiet" hidden>重试</button></div>
@@ -102,7 +101,7 @@
     <input id="insights-command-input" class="command-sink" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="周期洞察 EasyInput 指令接收">
     <header class="insights-header">
       <div><p class="eyebrow">PERSONAL ARCHIVE / PERIOD REVIEW</p><h1 id="insights-heading">周期洞察</h1><p>先核对真实历史的客观统计，再生成用于自我反思的观察。</p></div>
-      <button id="insights-exit" class="insights-exit" type="button">返回占卜 <kbd>S7</kbd></button>
+      <button id="insights-exit" class="insights-exit" type="button">返回占卜</button>
     </header>
     <div class="insights-layout">
       <section class="insights-range" aria-labelledby="insights-range-heading">
@@ -113,7 +112,7 @@
           <button type="button" role="option" data-range-index="2" aria-selected="false"><strong>最近 365 天</strong><span>年度长期回看</span></button>
         </div>
         <p id="insights-knob-context" class="insights-knob-context">旋钮左右 · 选择时间范围</p>
-        <button id="insights-generate" class="primary" type="button">确认并生成洞察 <kbd>短按</kbd></button>
+        <button id="insights-generate" class="quiet insights-pointer-action" type="button">使用当前范围生成（鼠标／触控）</button>
         <p class="insights-boundary">滚动时间窗以历史记录的创建时间计算；少于 3 条时只显示数据不足，不生成趋势性 AI 洞察。</p>
       </section>
       <section class="insights-report" aria-live="polite">
@@ -130,13 +129,13 @@
         </section>
       </section>
     </div>
-    <footer class="insights-footer"><span>S7 退出并返回进入前页面</span><span>旋钮选择 · 短按生成</span><span>历史只读 · 洞察独立保存</span></footer>
+    <footer class="insights-footer"><span>返回占卜并保留当前牌局</span><span>生成后旋钮浏览 · 短按重新选择</span><span>历史只读 · 洞察独立保存</span></footer>
   </section>
   <section id="learning-overlay" class="learning-overlay" hidden aria-labelledby="learning-heading">
     <input id="learning-command-input" class="command-sink" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="学习模式 EasyInput 指令接收">
     <header class="learning-header">
       <div><p class="eyebrow">THE CARD ARCHIVE / 78</p><h1 id="learning-heading">学习模式</h1><p>先观察，再写下自己的理解。确认以前，参考牌义不会出现。</p></div>
-      <button id="learning-exit" class="learning-exit" type="button">返回占卜 <kbd>S6</kbd></button>
+      <button id="learning-exit" class="learning-exit" type="button">返回占卜</button>
     </header>
     <div class="learning-layout">
       <section class="learning-browser" aria-label="浏览塔罗牌">
@@ -170,8 +169,8 @@
         </div>
       </article>
     </div>
-    <footer class="learning-footer"><span>S6 退出并返回进入前的占卜页面</span><span>S3 输入 · 旋钮浏览 · 短按打开</span><span>本地知识 · 零模型费用</span></footer>
+    <footer class="learning-footer"><span>返回进入前的占卜页面</span><span>S3 输入 · 旋钮浏览 · 短按打开</span><span>本地知识 · 零模型费用</span></footer>
   </section>
-    <footer><span>BETWEEN SIGNALS</span><span class="footer-motto">把问题留给自己，把这一刻留在这里。</span><div class="footer-actions"><button id="show-input" class="footer-tool" aria-expanded="false" aria-controls="input-panel">输入验证</button><a href="guide.html">使用手册</a><span>第 7 课 · V1.5.0</span></div></footer>
+    <footer><span>BETWEEN SIGNALS</span><span class="footer-motto">把问题留给自己，把这一刻留在这里。</span><div class="footer-actions"><button id="show-input" class="footer-tool" aria-expanded="false" aria-controls="input-panel">输入验证</button><a href="guide.html">使用手册</a><span>第 7 课 · V1.5.1</span></div></footer>
 </body>
 </html>

@@ -45,10 +45,10 @@ test('学习状态变更不修改占卜会话对象',()=>{
   assert.deepEqual(divination,snapshot);assert.equal(learning.active,true);
 });
 
-test('学习页面提供 S6、鼠标、旋钮和自行解读入口，参考区默认隐藏',()=>{
+test('学习页面提供鼠标、旋钮和自行解读入口，参考区默认隐藏',()=>{
   const html=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
   for(const id of ['learning-toggle','learning-exit','learning-command-input','learning-previous','learning-next','learning-open','learning-draft','learning-submit','learning-reference'])assert.match(html,new RegExp(`id="${id}"`));
-  assert.match(html,/学习模式 <kbd>S6<\/kbd>/);assert.match(html,/id="learning-reference"[^>]*hidden/);assert.match(html,/本地知识 · 零模型费用/);
+  assert.match(html,/id="learning-toggle"[^>]*>学习模式<\/button>/);assert.match(html,/id="learning-reference"[^>]*hidden/);assert.match(html,/本地知识 · 零模型费用/);
 });
 
 test('学习模式使用独立指令接收区并保持紧凑非悬浮页头',()=>{
