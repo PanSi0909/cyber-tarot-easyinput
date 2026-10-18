@@ -1,10 +1,10 @@
 # 牌面 V2 封存与续作说明
 
-状态：`FRAME_REVIEW`（2026-10-18）
+状态：`BATCH_01_REVIEW`（2026-10-18）
 
-牌面 V2 已恢复到三类最终牌框复核阶段。当前仍只保留 8 张原创样卡，不生成余下 70 张，也不把样卡混入正式占卜。正式页面继续使用完整一致的现有 78 张牌面体系；样卡仅在 `dist/card-pilot.html` 中查看。
+三类最终牌框已经获得用户确认。第一批 10 张原创牌面已生成，当前共 18 张资产；仍不把任何 V2 资产混入正式占卜。正式页面继续使用完整一致的现有 78 张牌面体系；所有 V2 资产仅在 `dist/card-pilot.html` 中查看。
 
-本轮复核代表为：大牌 `major-fool`、数字牌 `wands-three`、宫廷牌 `cups-knight`。评审页同时展示正位与逆位；三类牌框经用户确认、并再次确认生成预算与每批数量以前，manifest 中所有样卡继续保持 `needs-layout-review`。
+三类牌框代表 `major-fool`、`wands-three`、`cups-knight` 已标记为 `approved`。第一批 10 张见 `design/card-art-v2-batch-01-prompts.md`，状态均为 `needs-review`；逐张通过以前不得继续生成下一批。
 
 ## 已确认的下一版牌框要求
 
@@ -17,7 +17,22 @@
 
 ## 当前资产
 
-共同提示词和逐张构图说明见 `design/card-pilot-prompts.md`。8 张位图位于 `dist/assets/course-6/cards/`：
+共同提示词和逐张构图说明见 `design/card-pilot-prompts.md`。原始 8 张样卡与第一批 10 张位图均位于 `dist/assets/course-6/cards/`。
+
+第一批包括：
+
+- `major-magician.jpg`
+- `major-high-priestess.jpg`
+- `major-empress.jpg`
+- `major-emperor.jpg`
+- `wands-five.jpg`
+- `cups-two.jpg`
+- `swords-eight.jpg`
+- `pentacles-six.jpg`
+- `wands-page.jpg`
+- `swords-king.jpg`
+
+原始样卡包括：
 
 - `major-fool.jpg`
 - `major-death.jpg`
@@ -28,14 +43,14 @@
 - `cups-knight.jpg`
 - `pentacles-queen.jpg`
 
-它们当前状态均为 `needs-layout-review`：插画可以继续评审，但尚未按最终牌框要求完成验收。完整机器清单见 `design/card-art-v2-manifest.json`。
+原始样卡中的三类牌框代表已通过，其余 5 张仍为 `needs-layout-review`。第一批 10 张均为 `needs-review`。完整机器清单见 `design/card-art-v2-manifest.json`。
 
 ## 未完成范围
 
-- 20 张大阿卡纳插画。
-- 36 张数字小阿卡纳插画。
-- 14 张宫廷牌插画。
-- 8 张样卡的最终牌框复核与必要重绘。
+- 16 张大阿卡纳插画。
+- 32 张数字小阿卡纳插画。
+- 12 张宫廷牌插画。
+- 15 张现有资产的逐张内容或牌框复核与必要重绘。
 - 78 张统一性、数量准确性、正逆位和窄屏验收。
 
 ## 何时恢复

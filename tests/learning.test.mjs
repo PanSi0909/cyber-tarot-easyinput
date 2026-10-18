@@ -86,5 +86,6 @@ test('直接打开本地文件会进入 HTTP 预览，学习确认支持旋钮�
 test('牌面 V2 封存清单覆盖 78 张稳定 ID 且未启用生产映射',()=>{
   const manifest=JSON.parse(readFileSync(new URL('../design/card-art-v2-manifest.json',import.meta.url),'utf8'));
   const catalog=Object.values(manifest.catalog).flat();assert.equal(catalog.length,78);assert.equal(new Set(catalog).size,78);assert.deepEqual(new Set(catalog),new Set(cards.map(card=>card.id)));
-  assert.equal(manifest.productionEnabled,false);assert.equal(manifest.pilotCards.length,8);assert.equal(manifest.summary.pending,70);
+  const assets=[...manifest.pilotCards,...manifest.batch01Cards];
+  assert.equal(manifest.productionEnabled,false);assert.equal(manifest.pilotCards.length,8);assert.equal(manifest.summary.assets,assets.length);assert.equal(manifest.summary.pending,manifest.summary.total-assets.length);
 });
