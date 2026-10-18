@@ -22,15 +22,19 @@ const jpegDimensions=data=>{
 
 test('V2 牌框复核仍与生产牌组隔离',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
-  assert.equal(manifest.status,'batch-01-approved');
+  assert.equal(manifest.status,'batch-02-review');
   assert.equal(manifest.productionEnabled,false);
   assert.equal(manifest.pilotCards.length,8);
   assert.deepEqual(manifest.pilotCards.filter(card=>card.status==='approved').map(card=>card.id),['major-fool','wands-three','cups-knight']);
   assert.equal(manifest.pilotCards.filter(card=>card.status==='needs-layout-review').length,5);
   assert.equal(manifest.batch01Cards.length,10);
   assert.ok(manifest.batch01Cards.every(card=>card.status==='approved'));
+  assert.equal(manifest.batch02Cards.length,20);
+  assert.ok(manifest.batch02Cards.every(card=>card.status==='needs-review'));
+  assert.equal(manifest.summary.assets,38);
   assert.equal(manifest.summary.approved,13);
-  assert.equal(manifest.summary.needsReview,5);
+  assert.equal(manifest.summary.needsReview,25);
+  assert.equal(manifest.summary.pending,40);
 });
 
 test('三类牌框只旋转插画并只保留英文牌名',()=>{
@@ -48,6 +52,18 @@ test('第一批十张牌均为 1024 × 1536 JPEG 并进入独立评审页',()=>{
   assert.match(page,/首批十张 · 正逆位/);
   for(const card of manifest.batch01Cards){
     assert.match(script,new RegExp(`id:'${card.id}'`));
+    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+  }
+});
+
+test('第二批二十张牌均为 1024 × 1536 JPEG 并以待复核状态进入独立评审页',()=>{
+  const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
+  const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
+  assert.match(page,/第二批二十张 · 正逆位/);
+  assert.match(page,/第二批 20 张待复核/);
+  for(const card of manifest.batch02Cards){
+    assert.match(script,new RegExp(`id:'${card.id}'`));
+    assert.equal(card.status,'needs-review');
     assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
   }
 });

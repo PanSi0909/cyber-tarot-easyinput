@@ -1,17 +1,18 @@
 {
   "schemaVersion": 1,
   "project": "cyber-tarot-card-art-v2",
-  "status": "batch-01-approved",
+  "status": "batch-02-review",
   "productionEnabled": false,
   "defaultCardStatus": "pending",
   "summary": {
     "total": 78,
     "pilot": 8,
     "batch01": 10,
-    "assets": 18,
+    "batch02": 20,
+    "assets": 38,
     "approved": 13,
-    "needsReview": 5,
-    "pending": 60
+    "needsReview": 25,
+    "pending": 40
   },
   "finalFrameRequirements": {
     "topNumber": false,
@@ -44,6 +45,28 @@
     {"id":"pentacles-six","status":"approved","asset":"dist/assets/course-6/cards/pentacles-six.jpg"},
     {"id":"wands-page","status":"approved","asset":"dist/assets/course-6/cards/wands-page.jpg"},
     {"id":"swords-king","status":"approved","asset":"dist/assets/course-6/cards/swords-king.jpg"}
+  ],
+  "batch02Cards": [
+    {"id":"major-hierophant","status":"needs-review","asset":"dist/assets/course-6/cards/major-hierophant.jpg"},
+    {"id":"major-lovers","status":"needs-review","asset":"dist/assets/course-6/cards/major-lovers.jpg"},
+    {"id":"major-chariot","status":"needs-review","asset":"dist/assets/course-6/cards/major-chariot.jpg"},
+    {"id":"wands-ace","status":"needs-review","asset":"dist/assets/course-6/cards/wands-ace.jpg"},
+    {"id":"wands-two","status":"needs-review","asset":"dist/assets/course-6/cards/wands-two.jpg"},
+    {"id":"wands-four","status":"needs-review","asset":"dist/assets/course-6/cards/wands-four.jpg"},
+    {"id":"cups-ace","status":"needs-review","asset":"dist/assets/course-6/cards/cups-ace.jpg"},
+    {"id":"cups-three","status":"needs-review","asset":"dist/assets/course-6/cards/cups-three.jpg"},
+    {"id":"swords-page","status":"needs-review","asset":"dist/assets/course-6/cards/swords-page.jpg"},
+    {"id":"pentacles-page","status":"needs-review","asset":"dist/assets/course-6/cards/pentacles-page.jpg"},
+    {"id":"major-strength","status":"needs-review","asset":"dist/assets/course-6/cards/major-strength.jpg"},
+    {"id":"major-hermit","status":"needs-review","asset":"dist/assets/course-6/cards/major-hermit.jpg"},
+    {"id":"major-wheel","status":"needs-review","asset":"dist/assets/course-6/cards/major-wheel.jpg"},
+    {"id":"swords-ace","status":"needs-review","asset":"dist/assets/course-6/cards/swords-ace.jpg"},
+    {"id":"swords-two","status":"needs-review","asset":"dist/assets/course-6/cards/swords-two.jpg"},
+    {"id":"swords-four","status":"needs-review","asset":"dist/assets/course-6/cards/swords-four.jpg"},
+    {"id":"pentacles-ace","status":"needs-review","asset":"dist/assets/course-6/cards/pentacles-ace.jpg"},
+    {"id":"pentacles-two","status":"needs-review","asset":"dist/assets/course-6/cards/pentacles-two.jpg"},
+    {"id":"cups-page","status":"needs-review","asset":"dist/assets/course-6/cards/cups-page.jpg"},
+    {"id":"wands-knight","status":"needs-review","asset":"dist/assets/course-6/cards/wands-knight.jpg"}
   ],
   "catalog": {
     "major": ["major-fool","major-magician","major-high-priestess","major-empress","major-emperor","major-hierophant","major-lovers","major-chariot","major-strength","major-hermit","major-wheel","major-justice","major-hanged-man","major-death","major-temperance","major-devil","major-tower","major-star","major-moon","major-sun","major-judgement","major-world"],
