@@ -1,10 +1,10 @@
 # 牌面 V2 封存与续作说明
 
-状态：`BATCH_04_REVIEW`（2026-10-18）
+状态：`BATCH_04_APPROVED`（2026-10-18）
 
-三类最终牌框与前三批共 50 张原创牌面均已获得用户确认。第四批最后 20 张已生成并进入复核，当前 78 张资产已全部到位：53 张已批准、20 张第四批待复核、5 张原始样卡仍待版式复核；仍不把任何 V2 资产混入正式占卜。正式页面继续使用完整一致的现有 78 张牌面体系；所有 V2 资产仅在 `dist/card-pilot.html` 中查看。
+三类最终牌框与四批共 70 张原创牌面均已获得用户确认。当前 78 张资产已全部到位：73 张已批准，5 张原始样卡仍待版式复核；仍不把任何 V2 资产混入正式占卜。正式页面继续使用完整一致的现有 78 张牌面体系；所有 V2 资产仅在 `dist/card-pilot.html` 中查看。
 
-三类牌框代表 `major-fool`、`wands-three`、`cups-knight` 与前三批 50 张均已标记为 `approved`。四批提示词和构图规则分别见 `design/card-art-v2-batch-01-prompts.md` 至 `design/card-art-v2-batch-04-prompts.md`。第四批 20 张全部标记为 `needs-review`；其余 5 张原始样卡仍需逐张复核。第四批和原始样卡全部通过以前不得启用生产映射。
+三类牌框代表 `major-fool`、`wands-three`、`cups-knight` 与四批 70 张均已标记为 `approved`。四批提示词和构图规则分别见 `design/card-art-v2-batch-01-prompts.md` 至 `design/card-art-v2-batch-04-prompts.md`。其余 5 张原始样卡仍需逐张复核；原始样卡和全套一致性验收完成以前不得启用生产映射。
 
 ## 已确认的下一版牌框要求
 
@@ -58,12 +58,11 @@
 - `cups-knight.jpg`
 - `pentacles-queen.jpg`
 
-原始样卡中的三类牌框代表及前三批共 53 张均已通过；第四批 20 张为 `needs-review`，其余 5 张原始样卡为 `needs-layout-review`。完整机器清单见 `design/card-art-v2-manifest.json`。
+原始样卡中的三类牌框代表及四批共 73 张均已通过；其余 5 张原始样卡为 `needs-layout-review`。完整机器清单见 `design/card-art-v2-manifest.json`。
 
 ## 未完成范围
 
 - 0 张待生成插画。
-- 20 张第四批资产的逐张内容与牌框复核及必要重绘。
 - 5 张原始样卡的版式复核及必要重绘。
 - 78 张统一性、数量准确性、正逆位和窄屏验收。
 
