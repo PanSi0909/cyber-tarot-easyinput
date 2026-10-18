@@ -6,6 +6,7 @@ const gallery=document.querySelector('#pilot-gallery');
 const reviewGallery=document.querySelector('#frame-review-gallery');
 const batchReviewGallery=document.querySelector('#batch-review-gallery');
 const batch02ReviewGallery=document.querySelector('#batch-02-review-gallery');
+const batch03ReviewGallery=document.querySelector('#batch-03-review-gallery');
 const reviewCandidates=[
   {id:'major-fool',type:'大阿卡纳',note:'人物、白犬、悬崖与日出；检查主体安全区和逆位构图。'},
   {id:'wands-three',type:'数字小阿卡纳',note:'严格三根活木权杖；检查数量可读性与窄幅裁切。'},
@@ -45,6 +46,28 @@ const batch02ReviewCandidates=[
   {id:'cups-page',type:'宫廷牌 · 02B',note:'信使、单一圣杯与跃出的小鱼；无其他容器。'},
   {id:'wands-knight',type:'宫廷牌 · 02B',note:'骑士、栗色马与严格一根发芽权杖；无长矛或额外杆件。'}
 ];
+const batch03ReviewCandidates=[
+  {id:'major-justice',type:'大阿卡纳 · 03A',note:'一把竖直宝剑、一天秤与双柱；检查秩序感和安全区。'},
+  {id:'major-hanged-man',type:'大阿卡纳 · 03A',note:'单脚踝安全悬挂、平静光环；检查姿态明确且无伤害表达。'},
+  {id:'major-temperance',type:'大阿卡纳 · 03A',note:'严格两只杯与连续水流；检查一脚踏石、一脚触水。'},
+  {id:'major-devil',type:'大阿卡纳 · 03A',note:'两位成年人、可自行取下的开放项圈与通向外界的道路。'},
+  {id:'major-tower',type:'大阿卡纳 · 03A',note:'闪电、移位塔冠与双向撤离；检查突变感但无伤亡表现。'},
+  {id:'major-star',type:'大阿卡纳 · 03A',note:'两只水罐、一颗大星和七颗小星；检查星群与双水流。'},
+  {id:'major-moon',type:'大阿卡纳 · 03A',note:'双塔、家犬、野狼与池中甲壳生物；检查月相和路径层级。'},
+  {id:'major-sun',type:'大阿卡纳 · 03A',note:'成年骑手、单一白马、无字织旗与向日葵庭院。'},
+  {id:'major-judgement',type:'大阿卡纳 · 03A',note:'有翼信使、单一号角与走向光线的人群；挂旗保持无字。'},
+  {id:'major-world',type:'大阿卡纳 · 03A',note:'月桂环、双织带与人鹰狮牛四角守望形象。'},
+  {id:'wands-six',type:'数字小阿卡纳 · 03B',note:'领队一根、同行者五根，严格共六根权杖。'},
+  {id:'wands-seven',type:'数字小阿卡纳 · 03B',note:'台上一根、坡下六根，严格共七根权杖。'},
+  {id:'wands-eight',type:'数字小阿卡纳 · 03B',note:'严格八根平行飞越河谷的发芽权杖，全部分离可数。'},
+  {id:'cups-four',type:'数字小阿卡纳 · 03B',note:'地面三只、云中递出一只，严格共四只圣杯。'},
+  {id:'cups-five',type:'数字小阿卡纳 · 03B',note:'前方三只倾倒、后方两只直立，严格共五只圣杯。'},
+  {id:'cups-six',type:'数字小阿卡纳 · 03B',note:'石阶两层严格摆放六只花杯，无其他容器。'},
+  {id:'swords-five',type:'数字小阿卡纳 · 03B',note:'人物整理三把、沙地两把，严格共五把宝剑。'},
+  {id:'swords-six',type:'数字小阿卡纳 · 03B',note:'船头严格固定六把宝剑，船桨保持宽阔木质。'},
+  {id:'pentacles-three',type:'数字小阿卡纳 · 03B',note:'三位工匠与拱顶三枚星币；工具不带圆盘装饰。'},
+  {id:'pentacles-four',type:'数字小阿卡纳 · 03B',note:'额前一枚、胸前一枚、双脚各一枚，严格共四枚星币。'}
+];
 
 function v2Frame(card,orientation){
   const label=orientation==='reversed'?'逆位':'正位';
@@ -62,6 +85,7 @@ function appendReviewCard(target,candidate){
 for(const candidate of reviewCandidates)appendReviewCard(reviewGallery,candidate);
 for(const candidate of batchReviewCandidates)appendReviewCard(batchReviewGallery,candidate);
 for(const candidate of batch02ReviewCandidates)appendReviewCard(batch02ReviewGallery,candidate);
+for(const candidate of batch03ReviewCandidates)appendReviewCard(batch03ReviewGallery,candidate);
 
 for(const id of pilotCardIds){
   const card=cardById.get(id);
