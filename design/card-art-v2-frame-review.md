@@ -3,7 +3,7 @@
 日期：2026-10-18  
 范围：大牌、数字牌、宫廷牌各一张；只评审 `card-pilot.html`，不接入正式占卜。
 
-结果：用户已确认三类牌框和四批 70 张，均已在 manifest 中标记为 `approved`。第四批最后 20 张清单见 `design/card-art-v2-batch-04-prompts.md`；其余 5 张原始样卡仍待版式复核。
+结果：用户已确认三类牌框和四批 70 张，均已在 manifest 中标记为 `approved`。第四批最后 20 张清单见 `design/card-art-v2-batch-04-prompts.md`；其余 5 张原始样卡现已使用最终牌框正逆位并排展示，状态保持 `needs-layout-review`。
 
 ## 本轮代表
 

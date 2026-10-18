@@ -22,7 +22,7 @@ const jpegDimensions=data=>{
 
 test('V2 牌框复核仍与生产牌组隔离',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
-  assert.equal(manifest.status,'batch-04-approved');
+  assert.equal(manifest.status,'pilot-layout-review');
   assert.equal(manifest.productionEnabled,false);
   assert.equal(manifest.pilotCards.length,8);
   assert.deepEqual(manifest.pilotCards.filter(card=>card.status==='approved').map(card=>card.id),['major-fool','wands-three','cups-knight']);
@@ -48,6 +48,21 @@ test('三类牌框只旋转插画并只保留英文牌名',()=>{
   assert.match(script,/class="v2-caption">\$\{card\.en\}/);
   assert.match(styles,/\.v2-card\.orientation-reversed \.v2-artwork\{transform:rotate\(180deg\)\}/);
   assert.doesNotMatch(script,/face-number|face-orientation/);
+});
+
+test('最后五张原始样卡以最终牌框正逆位并排进入版式复核',()=>{
+  const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
+  const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
+  const pending=manifest.pilotCards.filter(card=>card.status==='needs-layout-review');
+  assert.equal(pending.length,5);
+  assert.match(page,/最后五张原始样卡复核/);
+  assert.match(page,/五张原始样卡 · 正逆位/);
+  assert.match(page,/5 张样卡待版式复核/);
+  assert.match(script,/pilot-layout-review-gallery/);
+  for(const card of pending){
+    assert.match(script,new RegExp(`id:'${card.id}'`));
+    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+  }
 });
 
 test('第一批十张牌均为 1024 × 1536 JPEG 并进入独立评审页',()=>{
@@ -86,7 +101,7 @@ test('第四批二十张牌均为 1024 × 1536 JPEG 并已通过',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
   const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
   assert.match(page,/第四批二十张 · 正逆位/);
-  assert.match(page,/第四批 20 张已通过/);
+  assert.match(page,/BATCH 04 \/ FINAL 20 · APPROVED/);
   for(const card of manifest.batch04Cards){
     assert.match(script,new RegExp(`id:'${card.id}'`));
     assert.equal(card.status,'approved');

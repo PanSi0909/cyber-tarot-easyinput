@@ -3,6 +3,7 @@ import {pilotCardIds,renderPilotCardFace} from './card-visuals.mjs';
 
 const cardById=new Map(cards.map(card=>[card.id,card]));
 const gallery=document.querySelector('#pilot-gallery');
+const pilotLayoutReviewGallery=document.querySelector('#pilot-layout-review-gallery');
 const reviewGallery=document.querySelector('#frame-review-gallery');
 const batchReviewGallery=document.querySelector('#batch-review-gallery');
 const batch02ReviewGallery=document.querySelector('#batch-02-review-gallery');
@@ -12,6 +13,13 @@ const reviewCandidates=[
   {id:'major-fool',type:'大阿卡纳',note:'人物、白犬、悬崖与日出；检查主体安全区和逆位构图。'},
   {id:'wands-three',type:'数字小阿卡纳',note:'严格三根活木权杖；检查数量可读性与窄幅裁切。'},
   {id:'cups-knight',type:'宫廷牌',note:'骑士、白马与单一圣杯；检查人物层级和英文牌名。'}
+];
+const pilotLayoutReviewCandidates=[
+  {id:'major-death',type:'原始样卡 · 大阿卡纳',note:'检查人物、白马、旗帜和远景是否都保留在最终牌框安全区。'},
+  {id:'cups-seven',type:'原始样卡 · 数字小阿卡纳',note:'检查七只圣杯在正逆位中是否完整、可数且没有被裁切。'},
+  {id:'swords-three',type:'原始样卡 · 数字小阿卡纳',note:'检查三把宝剑、心形主体与雨云在窄幅中的层级。'},
+  {id:'pentacles-ten',type:'原始样卡 · 数字小阿卡纳',note:'检查十枚星币、人物与建筑在最终牌框中是否清楚可数。'},
+  {id:'pentacles-queen',type:'原始样卡 · 宫廷牌',note:'检查王后、单一星币和自然背景的主体安全区。'}
 ];
 const batchReviewCandidates=[
   {id:'major-magician',type:'大阿卡纳',note:'四件器物、举杖与指地动作；检查象征物完整性。'},
@@ -105,6 +113,7 @@ function appendReviewCard(target,candidate){
   target.append(article);
 }
 
+for(const candidate of pilotLayoutReviewCandidates)appendReviewCard(pilotLayoutReviewGallery,candidate);
 for(const candidate of reviewCandidates)appendReviewCard(reviewGallery,candidate);
 for(const candidate of batchReviewCandidates)appendReviewCard(batchReviewGallery,candidate);
 for(const candidate of batch02ReviewCandidates)appendReviewCard(batch02ReviewGallery,candidate);
