@@ -1,10 +1,10 @@
 # 牌面 V2 封存与续作说明
 
-状态：`BATCH_03_REVIEW`（2026-10-18）
+状态：`BATCH_04_REVIEW`（2026-10-18）
 
-三类最终牌框、第一批 10 张和第二批 20 张原创牌面均已获得用户确认。第三批 20 张已生成并进入复核，当前共 58 张资产：33 张已批准、20 张第三批待复核、5 张原始样卡仍待版式复核；仍不把任何 V2 资产混入正式占卜。正式页面继续使用完整一致的现有 78 张牌面体系；所有 V2 资产仅在 `dist/card-pilot.html` 中查看。
+三类最终牌框与前三批共 50 张原创牌面均已获得用户确认。第四批最后 20 张已生成并进入复核，当前 78 张资产已全部到位：53 张已批准、20 张第四批待复核、5 张原始样卡仍待版式复核；仍不把任何 V2 资产混入正式占卜。正式页面继续使用完整一致的现有 78 张牌面体系；所有 V2 资产仅在 `dist/card-pilot.html` 中查看。
 
-三类牌框代表 `major-fool`、`wands-three`、`cups-knight`、第一批 10 张与第二批 20 张均已标记为 `approved`。第一、二批提示词和构图规则分别见 `design/card-art-v2-batch-01-prompts.md` 与 `design/card-art-v2-batch-02-prompts.md`。第三批 20 张全部标记为 `needs-review`，清单与规则见 `design/card-art-v2-batch-03-prompts.md`。其余 5 张原始样卡仍需逐张复核；第四批不得在第三批验收前开始。
+三类牌框代表 `major-fool`、`wands-three`、`cups-knight` 与前三批 50 张均已标记为 `approved`。四批提示词和构图规则分别见 `design/card-art-v2-batch-01-prompts.md` 至 `design/card-art-v2-batch-04-prompts.md`。第四批 20 张全部标记为 `needs-review`；其余 5 张原始样卡仍需逐张复核。第四批和原始样卡全部通过以前不得启用生产映射。
 
 ## 已确认的下一版牌框要求
 
@@ -17,7 +17,12 @@
 
 ## 当前资产
 
-共同提示词和逐张构图说明见 `design/card-pilot-prompts.md`。原始 8 张样卡及前三批位图均位于 `dist/assets/course-6/cards/`。
+共同提示词和逐张构图说明见 `design/card-pilot-prompts.md`。原始 8 张样卡及四批位图均位于 `dist/assets/course-6/cards/`。
+
+第四批包括：
+
+- 数字牌：`wands-nine.jpg`、`wands-ten.jpg`、`cups-eight.jpg`、`cups-nine.jpg`、`cups-ten.jpg`、`swords-seven.jpg`、`swords-nine.jpg`、`swords-ten.jpg`、`pentacles-five.jpg`、`pentacles-seven.jpg`、`pentacles-eight.jpg`、`pentacles-nine.jpg`
+- 宫廷牌：`wands-queen.jpg`、`wands-king.jpg`、`cups-queen.jpg`、`cups-king.jpg`、`swords-knight.jpg`、`swords-queen.jpg`、`pentacles-knight.jpg`、`pentacles-king.jpg`
 
 第三批包括：
 
@@ -53,14 +58,13 @@
 - `cups-knight.jpg`
 - `pentacles-queen.jpg`
 
-原始样卡中的三类牌框代表及前两批共 30 张均已通过；第三批 20 张为 `needs-review`，其余 5 张原始样卡为 `needs-layout-review`。完整机器清单见 `design/card-art-v2-manifest.json`。
+原始样卡中的三类牌框代表及前三批共 53 张均已通过；第四批 20 张为 `needs-review`，其余 5 张原始样卡为 `needs-layout-review`。完整机器清单见 `design/card-art-v2-manifest.json`。
 
 ## 未完成范围
 
-- 0 张大阿卡纳插画。
-- 12 张数字小阿卡纳插画。
-- 8 张宫廷牌插画。
-- 25 张现有资产的逐张内容或牌框复核与必要重绘。
+- 0 张待生成插画。
+- 20 张第四批资产的逐张内容与牌框复核及必要重绘。
+- 5 张原始样卡的版式复核及必要重绘。
 - 78 张统一性、数量准确性、正逆位和窄屏验收。
 
 ## 何时恢复
@@ -78,7 +82,7 @@
 
 ## 推荐续作与合并方法
 
-1. 每批生成 6–10 张，逐张核对元素数量、象征物、裁切安全区和风格一致性。
+1. 先完成第四批 20 张与 5 张原始样卡的逐张复核，必要时只重绘未通过项。
 2. 只在独立 `card-pilot.html` 中评审；把通过项在 manifest 中改为 `approved`。
 3. 78 张全部通过后，再一次性把已批准资产映射接入 `dist/card-visuals.mjs`；不要边生成边混入生产牌组。
 4. 运行牌面、业务和响应式测试，确认 78 张资源完整、数字元素数量正确、逆位不变形。

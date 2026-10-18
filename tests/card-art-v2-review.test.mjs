@@ -22,7 +22,7 @@ const jpegDimensions=data=>{
 
 test('V2 牌框复核仍与生产牌组隔离',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
-  assert.equal(manifest.status,'batch-03-review');
+  assert.equal(manifest.status,'batch-04-review');
   assert.equal(manifest.productionEnabled,false);
   assert.equal(manifest.pilotCards.length,8);
   assert.deepEqual(manifest.pilotCards.filter(card=>card.status==='approved').map(card=>card.id),['major-fool','wands-three','cups-knight']);
@@ -32,11 +32,13 @@ test('V2 牌框复核仍与生产牌组隔离',()=>{
   assert.equal(manifest.batch02Cards.length,20);
   assert.ok(manifest.batch02Cards.every(card=>card.status==='approved'));
   assert.equal(manifest.batch03Cards.length,20);
-  assert.ok(manifest.batch03Cards.every(card=>card.status==='needs-review'));
-  assert.equal(manifest.summary.assets,58);
-  assert.equal(manifest.summary.approved,33);
+  assert.ok(manifest.batch03Cards.every(card=>card.status==='approved'));
+  assert.equal(manifest.batch04Cards.length,20);
+  assert.ok(manifest.batch04Cards.every(card=>card.status==='needs-review'));
+  assert.equal(manifest.summary.assets,78);
+  assert.equal(manifest.summary.approved,53);
   assert.equal(manifest.summary.needsReview,25);
-  assert.equal(manifest.summary.pending,20);
+  assert.equal(manifest.summary.pending,0);
 });
 
 test('三类牌框只旋转插画并只保留英文牌名',()=>{
@@ -69,12 +71,23 @@ test('第二批二十张牌均为 1024 × 1536 JPEG 并已通过',()=>{
   }
 });
 
-test('第三批二十张牌均为 1024 × 1536 JPEG 并以待复核状态进入独立评审页',()=>{
+test('第三批二十张牌均为 1024 × 1536 JPEG 并已通过',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
   const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
   assert.match(page,/第三批二十张 · 正逆位/);
-  assert.match(page,/第三批 20 张待复核/);
   for(const card of manifest.batch03Cards){
+    assert.match(script,new RegExp(`id:'${card.id}'`));
+    assert.equal(card.status,'approved');
+    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+  }
+});
+
+test('第四批二十张牌均为 1024 × 1536 JPEG 并以待复核状态进入独立评审页',()=>{
+  const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
+  const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
+  assert.match(page,/第四批二十张 · 正逆位/);
+  assert.match(page,/第四批 20 张待复核/);
+  for(const card of manifest.batch04Cards){
     assert.match(script,new RegExp(`id:'${card.id}'`));
     assert.equal(card.status,'needs-review');
     assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});

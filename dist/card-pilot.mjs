@@ -7,6 +7,7 @@ const reviewGallery=document.querySelector('#frame-review-gallery');
 const batchReviewGallery=document.querySelector('#batch-review-gallery');
 const batch02ReviewGallery=document.querySelector('#batch-02-review-gallery');
 const batch03ReviewGallery=document.querySelector('#batch-03-review-gallery');
+const batch04ReviewGallery=document.querySelector('#batch-04-review-gallery');
 const reviewCandidates=[
   {id:'major-fool',type:'大阿卡纳',note:'人物、白犬、悬崖与日出；检查主体安全区和逆位构图。'},
   {id:'wands-three',type:'数字小阿卡纳',note:'严格三根活木权杖；检查数量可读性与窄幅裁切。'},
@@ -68,6 +69,28 @@ const batch03ReviewCandidates=[
   {id:'pentacles-three',type:'数字小阿卡纳 · 03B',note:'三位工匠与拱顶三枚星币；工具不带圆盘装饰。'},
   {id:'pentacles-four',type:'数字小阿卡纳 · 03B',note:'额前一枚、胸前一枚、双脚各一枚，严格共四枚星币。'}
 ];
+const batch04ReviewCandidates=[
+  {id:'wands-nine',type:'数字小阿卡纳 · 04',note:'手持一根、后方八根，严格共九根权杖。'},
+  {id:'wands-ten',type:'数字小阿卡纳 · 04',note:'宽松束带中严格十根权杖，逐根分离可数。'},
+  {id:'cups-eight',type:'数字小阿卡纳 · 04',note:'石台两排各四只，严格共八只圣杯。'},
+  {id:'cups-nine',type:'数字小阿卡纳 · 04',note:'弧形石架单排严格九只圣杯。'},
+  {id:'cups-ten',type:'数字小阿卡纳 · 04',note:'长桌左右各五只，严格共十只圣杯。'},
+  {id:'swords-seven',type:'数字小阿卡纳 · 04',note:'怀中五把、地面两把，严格共七把宝剑。'},
+  {id:'swords-nine',type:'数字小阿卡纳 · 04',note:'墙面三排三列，严格共九把宝剑。'},
+  {id:'swords-ten',type:'数字小阿卡纳 · 04',note:'前后两排各五把，严格共十把宝剑；斗篷内无人。'},
+  {id:'pentacles-five',type:'数字小阿卡纳 · 04',note:'工坊花窗严格五枚大型星币。'},
+  {id:'pentacles-seven',type:'数字小阿卡纳 · 04',note:'藤架上严格七枚星币果实。'},
+  {id:'pentacles-eight',type:'数字小阿卡纳 · 04',note:'墙上七枚、工作台一枚，严格共八枚星币。'},
+  {id:'pentacles-nine',type:'数字小阿卡纳 · 04',note:'石格三排三列，严格共九枚星币。'},
+  {id:'wands-queen',type:'宫廷牌 · 04',note:'向日葵庭院、黑猫与单一开花权杖。'},
+  {id:'wands-king',type:'宫廷牌 · 04',note:'火山岩王座、蝾螈纹与单一发芽权杖。'},
+  {id:'cups-queen',type:'宫廷牌 · 04',note:'潮汐石座与双手端持的单一带盖圣杯。'},
+  {id:'cups-king',type:'宫廷牌 · 04',note:'海湾平台、单一圣杯与无尖端仪式短杖。'},
+  {id:'swords-knight',type:'宫廷牌 · 04',note:'灰马、强风高原与双手控制的单一长剑。'},
+  {id:'swords-queen',type:'宫廷牌 · 04',note:'临海峭壁、开放手势与单一竖直长剑。'},
+  {id:'pentacles-knight',type:'宫廷牌 · 04',note:'深色农耕马、梯田与双手托起的单一星币。'},
+  {id:'pentacles-king',type:'宫廷牌 · 04',note:'公牛纹石座、葡萄园与双手持有的单一星币。'}
+];
 
 function v2Frame(card,orientation){
   const label=orientation==='reversed'?'逆位':'正位';
@@ -86,6 +109,7 @@ for(const candidate of reviewCandidates)appendReviewCard(reviewGallery,candidate
 for(const candidate of batchReviewCandidates)appendReviewCard(batchReviewGallery,candidate);
 for(const candidate of batch02ReviewCandidates)appendReviewCard(batch02ReviewGallery,candidate);
 for(const candidate of batch03ReviewCandidates)appendReviewCard(batch03ReviewGallery,candidate);
+for(const candidate of batch04ReviewCandidates)appendReviewCard(batch04ReviewGallery,candidate);
 
 for(const id of pilotCardIds){
   const card=cardById.get(id);
