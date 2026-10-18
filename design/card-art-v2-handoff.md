@@ -1,10 +1,10 @@
 # 牌面 V2 封存与续作说明
 
-状态：`BATCH_01_REVIEW`（2026-10-18）
+状态：`BATCH_01_APPROVED`（2026-10-18）
 
-三类最终牌框已经获得用户确认。第一批 10 张原创牌面已生成，当前共 18 张资产；仍不把任何 V2 资产混入正式占卜。正式页面继续使用完整一致的现有 78 张牌面体系；所有 V2 资产仅在 `dist/card-pilot.html` 中查看。
+三类最终牌框和第一批 10 张原创牌面均已获得用户确认，当前共 18 张资产、13 张已批准；仍不把任何 V2 资产混入正式占卜。正式页面继续使用完整一致的现有 78 张牌面体系；所有 V2 资产仅在 `dist/card-pilot.html` 中查看。
 
-三类牌框代表 `major-fool`、`wands-three`、`cups-knight` 已标记为 `approved`。第一批 10 张见 `design/card-art-v2-batch-01-prompts.md`，状态均为 `needs-review`；逐张通过以前不得继续生成下一批。
+三类牌框代表 `major-fool`、`wands-three`、`cups-knight` 与第一批 10 张均已标记为 `approved`。第一批提示词和构图规则见 `design/card-art-v2-batch-01-prompts.md`。其余 5 张原始样卡仍需逐张复核；第二批尚未开始。
 
 ## 已确认的下一版牌框要求
 
@@ -43,7 +43,7 @@
 - `cups-knight.jpg`
 - `pentacles-queen.jpg`
 
-原始样卡中的三类牌框代表已通过，其余 5 张仍为 `needs-layout-review`。第一批 10 张均为 `needs-review`。完整机器清单见 `design/card-art-v2-manifest.json`。
+原始样卡中的三类牌框代表与第一批 10 张均已通过，其余 5 张原始样卡仍为 `needs-layout-review`。完整机器清单见 `design/card-art-v2-manifest.json`。
 
 ## 未完成范围
 

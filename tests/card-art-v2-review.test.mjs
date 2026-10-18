@@ -22,13 +22,15 @@ const jpegDimensions=data=>{
 
 test('V2 牌框复核仍与生产牌组隔离',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
-  assert.equal(manifest.status,'batch-01-review');
+  assert.equal(manifest.status,'batch-01-approved');
   assert.equal(manifest.productionEnabled,false);
   assert.equal(manifest.pilotCards.length,8);
   assert.deepEqual(manifest.pilotCards.filter(card=>card.status==='approved').map(card=>card.id),['major-fool','wands-three','cups-knight']);
   assert.equal(manifest.pilotCards.filter(card=>card.status==='needs-layout-review').length,5);
   assert.equal(manifest.batch01Cards.length,10);
-  assert.ok(manifest.batch01Cards.every(card=>card.status==='needs-review'));
+  assert.ok(manifest.batch01Cards.every(card=>card.status==='approved'));
+  assert.equal(manifest.summary.approved,13);
+  assert.equal(manifest.summary.needsReview,5);
 });
 
 test('三类牌框只旋转插画并只保留英文牌名',()=>{
