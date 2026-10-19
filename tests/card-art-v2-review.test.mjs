@@ -20,13 +20,13 @@ const jpegDimensions=data=>{
   assert.fail('JPEG 缺少尺寸信息');
 };
 
-test('V2 牌框复核仍与生产牌组隔离',()=>{
+test('V2 全套 78 张已通过并启用本地生产映射',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
-  assert.equal(manifest.status,'pilot-layout-review');
-  assert.equal(manifest.productionEnabled,false);
+  assert.equal(manifest.status,'production-ready');
+  assert.equal(manifest.productionEnabled,true);
+  assert.equal(manifest.productionAssetRoot,'dist/assets/course-6/cards-v2-web');
   assert.equal(manifest.pilotCards.length,8);
-  assert.deepEqual(manifest.pilotCards.filter(card=>card.status==='approved').map(card=>card.id),['major-fool','wands-three','cups-knight']);
-  assert.equal(manifest.pilotCards.filter(card=>card.status==='needs-layout-review').length,5);
+  assert.ok(manifest.pilotCards.every(card=>card.status==='approved'));
   assert.equal(manifest.batch01Cards.length,10);
   assert.ok(manifest.batch01Cards.every(card=>card.status==='approved'));
   assert.equal(manifest.batch02Cards.length,20);
@@ -36,8 +36,8 @@ test('V2 牌框复核仍与生产牌组隔离',()=>{
   assert.equal(manifest.batch04Cards.length,20);
   assert.ok(manifest.batch04Cards.every(card=>card.status==='approved'));
   assert.equal(manifest.summary.assets,78);
-  assert.equal(manifest.summary.approved,73);
-  assert.equal(manifest.summary.needsReview,5);
+  assert.equal(manifest.summary.approved,78);
+  assert.equal(manifest.summary.needsReview,0);
   assert.equal(manifest.summary.pending,0);
 });
 
@@ -50,18 +50,26 @@ test('三类牌框只旋转插画并只保留英文牌名',()=>{
   assert.doesNotMatch(script,/face-number|face-orientation/);
 });
 
-test('最后五张原始样卡以最终牌框正逆位并排进入版式复核',()=>{
+test('最后五张原始样卡已通过最终牌框正逆位复核',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
   const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
-  const pending=manifest.pilotCards.filter(card=>card.status==='needs-layout-review');
-  assert.equal(pending.length,5);
-  assert.match(page,/最后五张原始样卡复核/);
+  const finalFive=['major-death','cups-seven','swords-three','pentacles-ten','pentacles-queen'].map(id=>manifest.pilotCards.find(card=>card.id===id));
+  assert.ok(finalFive.every(card=>card?.status==='approved'));
+  assert.match(page,/全套牌面验收档案/);
   assert.match(page,/五张原始样卡 · 正逆位/);
-  assert.match(page,/5 张样卡待版式复核/);
   assert.match(script,/pilot-layout-review-gallery/);
-  for(const card of pending){
+  for(const card of finalFive){
     assert.match(script,new RegExp(`id:'${card.id}'`));
     assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+  }
+});
+
+test('网页优化副本覆盖 78 张并保持 2:3 尺寸',()=>{
+  const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
+  const cards=[...manifest.pilotCards,...manifest.batch01Cards,...manifest.batch02Cards,...manifest.batch03Cards,...manifest.batch04Cards];
+  for(const card of cards){
+    const asset=`${manifest.productionAssetRoot}/${card.id}.jpg`;
+    assert.deepEqual(jpegDimensions(readBytes(asset)),{width:640,height:960},card.id);
   }
 });
 

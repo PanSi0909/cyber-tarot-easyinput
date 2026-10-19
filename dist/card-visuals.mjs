@@ -7,6 +7,7 @@ const suitMeta={
 };
 const rankNumbers={ace:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10};
 const courtLabels={page:'PAGE',knight:'KNIGHT',queen:'QUEEN',king:'KING'};
+const productionV2ArtworkRoot='./assets/course-6/cards-v2-web';
 const pilotArtwork={
   'major-fool':'major-fool.jpg',
   'major-death':'major-death.jpg',
@@ -52,12 +53,17 @@ function artworkFor(card,usePilotArtwork=false){
   return `${illustration}${pipField(suit,rank)}<span class="suit-caption">${escapeHtml(meta.label)}</span>`;
 }
 
+function productionV2Artwork(card){
+  return `<span class="illustration v2-production-illustration" style="--art:url('${productionV2ArtworkRoot}/${escapeHtml(card.id)}.jpg')"></span>`;
+}
+
 export function renderCardBack(){
   return '<span class="card-back-art" aria-hidden="true"><span class="back-frame"></span><span class="back-flora flora-a">✤</span><span class="back-flora flora-b">✤</span><span class="back-orbit orbit-a"></span><span class="back-orbit orbit-b"></span><span class="back-eclipse"></span><span class="back-star star-a">✦</span><span class="back-star star-b">✦</span><span class="back-monogram">BETWEEN<br>SIGNALS</span></span><span class="candidate-label">CURRENT · 当前候选</span>';
 }
 
 function renderFace(card,orientation,usePilotArtwork){
   const family=card.id.startsWith('major-')?'major':card.id.split('-')[0];
+  if(!usePilotArtwork)return `<span class="card-face-visual production-v2 family-${escapeHtml(family)} orientation-${orientation}" aria-hidden="true"><span class="face-artwork">${productionV2Artwork(card)}</span><span class="face-caption"><small>${escapeHtml(card.en)}</small></span></span>`;
   return `<span class="card-face-visual family-${escapeHtml(family)} orientation-${orientation}" aria-hidden="true"><span class="face-number">${escapeHtml(card.number)}</span><span class="face-orientation">${orientation==='reversed'?'↓ 逆位':'↑ 正位'}</span><span class="face-artwork">${artworkFor(card,usePilotArtwork)}</span><span class="face-caption"><strong>${escapeHtml(card.name)}</strong><small>${escapeHtml(card.en)}</small><em>${escapeHtml(card.keywords)}</em></span></span>`;
 }
 

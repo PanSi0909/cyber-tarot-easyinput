@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 import {cards} from '../dist/core.mjs';
 import {pilotCardIds,renderCardBack,renderCardFace,renderPilotCardFace} from '../dist/card-visuals.mjs';
 
@@ -11,31 +11,30 @@ test('牌背使用对称仪式纹样且不包含卡牌身份',()=>{
   for(const card of cards)assert.doesNotMatch(markup,new RegExp(card.name));
 });
 
-test('78 张牌都有完整牌面结构与方向标识',()=>{
+test('78 张生产牌面只保留英文牌名且正逆位共用同一张插画',()=>{
   assert.equal(cards.length,78);
   for(const card of cards){
     const upright=renderCardFace(card,'upright'),reversed=renderCardFace(card,'reversed');
-    assert.match(upright,/card-face-visual/);
-    assert.match(upright,new RegExp(card.name));
-    assert.match(upright,new RegExp(card.keywords));
-    assert.match(upright,/↑ 正位/);
-    assert.match(reversed,/↓ 逆位/);
+    assert.match(upright,/card-face-visual production-v2/);
+    assert.match(upright,new RegExp(card.en));
+    assert.doesNotMatch(upright,new RegExp(card.name));
+    assert.doesNotMatch(upright,new RegExp(card.keywords));
+    assert.doesNotMatch(upright,/face-number|face-orientation|↑ 正位|↓ 逆位/);
+    assert.match(reversed,/orientation-reversed/);
+    assert.match(upright,new RegExp(`cards-v2-web/${card.id}\\.jpg`));
+    assert.match(reversed,new RegExp(`cards-v2-web/${card.id}\\.jpg`));
     assert.notEqual(upright,reversed);
   }
 });
 
-test('22 张大牌逐张使用独立场景，56 张小牌使用花色和位阶规则',()=>{
+test('22 张大牌和 56 张小牌逐张使用独立 V2 资产',()=>{
   const majors=cards.filter(card=>card.id.startsWith('major-'));
   const minors=cards.filter(card=>!card.id.startsWith('major-'));
   assert.equal(majors.length,22);
   assert.equal(minors.length,56);
-  const majorArtwork=majors.map(card=>{
-    const match=renderCardFace(card).match(/--art:url\('([^']+)'\)(?:;--art-position:([^";]+))?/);
-    return match&&`${match[1]}#${match[2]??'full'}`;
-  });
-  for(const card of majors)assert.match(renderCardFace(card),/major-illustration/);
-  assert.equal(new Set(majorArtwork).size,22);
-  for(const card of minors)assert.match(renderCardFace(card),/minor-illustration/);
+  const paths=cards.map(card=>renderCardFace(card).match(/--art:url\('([^']+)'\)/)?.[1]);
+  assert.equal(new Set(paths).size,78);
+  assert.ok(paths.every(path=>path?.includes('/cards-v2-web/')));
 });
 
 test('首批八张样卡使用独立叙事资产，不叠加机械花色符号',()=>{
@@ -48,30 +47,16 @@ test('首批八张样卡使用独立叙事资产，不叠加机械花色符号',
   }
 });
 
-test('数字小阿卡纳以正确数量的对应花色元素呈现',()=>{
-  const expected={ace:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10};
-  for(const card of cards.filter(item=>!item.id.startsWith('major-'))){
-    const [suit,rank]=card.id.split('-');
-    if(!(rank in expected))continue;
-    const markup=renderCardFace(card);
-    assert.match(markup,new RegExp(`data-pip-count="${expected[rank]}"`),card.id);
-    assert.equal((markup.match(new RegExp(`symbol-${suit}`, 'g'))||[]).length,expected[rank],card.id);
-  }
-});
-
-test('宫廷牌显示与所属花色一致的独立标识',()=>{
-  for(const card of cards.filter(item=>/-page|-knight|-queen|-king/.test(item.id))){
-    const [suit]=card.id.split('-');
-    const markup=renderCardFace(card,'reversed');
-    assert.match(markup,new RegExp(`court-emblem symbol-${suit}`),card.id);
-    assert.doesNotMatch(markup,/court-seal[^>]*>[^<]*<b[^>]*>[^<]+<\/b>/,card.id);
-  }
-});
-
 test('生产牌面只引用项目内原创资产且文件完整',()=>{
   const markup=cards.map(card=>renderCardFace(card)).join('');
   const paths=[...new Set([...markup.matchAll(/assets\/course-6\/([^')]+)/g)].map(match=>match[1]))];
-  assert.equal(paths.length,9);
+  assert.equal(paths.length,78);
   for(const path of paths)assert.equal(existsSync(new URL(`../dist/assets/course-6/${path}`,import.meta.url)),true,path);
   assert.doesNotMatch(markup,/<svg|https?:\/\//);
+});
+
+test('V2 生产牌框只旋转插画并保持英文标题正向',()=>{
+  const styles=readFileSync(new URL('../dist/styles.css',import.meta.url),'utf8');
+  assert.match(styles,/\.orientation-reversed \.illustration\{rotate:0deg;transform:rotate\(180deg\)\}/);
+  assert.match(styles,/\.orientation-reversed\.production-v2 \.face-caption\{rotate:0deg;transform:none\}/);
 });

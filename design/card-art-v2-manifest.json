@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
   "project": "cyber-tarot-card-art-v2",
-  "status": "pilot-layout-review",
-  "productionEnabled": false,
+  "status": "production-ready",
+  "productionEnabled": true,
+  "productionAssetRoot": "dist/assets/course-6/cards-v2-web",
   "defaultCardStatus": "pending",
   "summary": {
     "total": 78,
@@ -12,8 +13,8 @@
     "batch03": 20,
     "batch04": 20,
     "assets": 78,
-    "approved": 73,
-    "needsReview": 5,
+    "approved": 78,
+    "needsReview": 0,
     "pending": 0
   },
   "finalFrameRequirements": {
@@ -28,13 +29,13 @@
   },
   "pilotCards": [
     {"id":"major-fool","status":"approved","asset":"dist/assets/course-6/cards/major-fool.jpg"},
-    {"id":"major-death","status":"needs-layout-review","asset":"dist/assets/course-6/cards/major-death.jpg"},
+    {"id":"major-death","status":"approved","asset":"dist/assets/course-6/cards/major-death.jpg"},
     {"id":"wands-three","status":"approved","asset":"dist/assets/course-6/cards/wands-three.jpg"},
-    {"id":"cups-seven","status":"needs-layout-review","asset":"dist/assets/course-6/cards/cups-seven.jpg"},
-    {"id":"swords-three","status":"needs-layout-review","asset":"dist/assets/course-6/cards/swords-three.jpg"},
-    {"id":"pentacles-ten","status":"needs-layout-review","asset":"dist/assets/course-6/cards/pentacles-ten.jpg"},
+    {"id":"cups-seven","status":"approved","asset":"dist/assets/course-6/cards/cups-seven.jpg"},
+    {"id":"swords-three","status":"approved","asset":"dist/assets/course-6/cards/swords-three.jpg"},
+    {"id":"pentacles-ten","status":"approved","asset":"dist/assets/course-6/cards/pentacles-ten.jpg"},
     {"id":"cups-knight","status":"approved","asset":"dist/assets/course-6/cards/cups-knight.jpg"},
-    {"id":"pentacles-queen","status":"needs-layout-review","asset":"dist/assets/course-6/cards/pentacles-queen.jpg"}
+    {"id":"pentacles-queen","status":"approved","asset":"dist/assets/course-6/cards/pentacles-queen.jpg"}
   ],
   "batch01Cards": [
     {"id":"major-magician","status":"approved","asset":"dist/assets/course-6/cards/major-magician.jpg"},
