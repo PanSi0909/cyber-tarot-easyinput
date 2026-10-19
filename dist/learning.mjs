@@ -24,6 +24,7 @@ export function learningTransition(state,action,total=78){
   if(!state.active)return state;
   if(action==='left'||action==='right')return {...state,index:(state.index+(action==='left'?-1:1)+total)%total,detailOpen:false,draft:'',confirmed:false};
   if(action==='confirm')return state.detailOpen?state:{...state,detailOpen:true};
+  if(action==='close-detail')return state.detailOpen?{...state,detailOpen:false,draft:'',confirmed:false}:state;
   if(action==='clear')return state.draft||state.confirmed?{...state,draft:'',confirmed:false}:state;
   if(action==='submit')return !state.detailOpen||state.confirmed||!state.draft.trim()?state:{...state,confirmed:true};
   if(action?.type==='set-draft'&&state.detailOpen&&!state.confirmed){

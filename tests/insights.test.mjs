@@ -79,10 +79,11 @@ test('周期洞察页面标注数据来源、独立保存与安全边界',()=>{
   assert.match(html,/少于 3 条时只显示数据不足/);assert.match(html,/历史只读 · 洞察独立保存/);
 });
 
-test('洞察生成后旋钮浏览长内容，短按返回范围选择',()=>{
+test('洞察或数据不足统计显示后旋钮浏览长内容，短按返回范围选择',()=>{
   const app=readFileSync(new URL('../dist/app.mjs',import.meta.url),'utf8');
-  assert.match(app,/insights\.status==='ready'&&\['left','right'\]\.includes\(action\)\)return scrollInsightContent/);
-  assert.match(app,/insights\.status==='ready'&&action==='confirm'\)return resetInsightRangeSelection/);
+  assert.match(app,/const browsing=\['ready','insufficient'\]\.includes\(insights\.status\)/);
+  assert.match(app,/if\(browsing&&\['left','right'\]\.includes\(action\)\)return scrollInsightContent/);
+  assert.match(app,/if\(browsing&&action==='confirm'\)return resetInsightRangeSelection/);
   assert.match(app,/overlay\.scrollBy\(\{top:action==='right'\?distance:-distance,behavior\}\)/);
 });
 

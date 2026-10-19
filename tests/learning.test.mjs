@@ -24,6 +24,14 @@ test('自行解读确认前可编辑，确认后只生成一次对照',()=>{
   state=learningTransition(state,{type:'set-draft',value:'第一次'});state=learningTransition(state,{type:'set-draft',value:'第二次'});
   assert.equal(state.draft,'第二次');state=learningTransition(state,'submit');assert.equal(state.confirmed,true);
   assert.equal(learningTransition(state,'submit'),state);assert.equal(learningTransition(state,{type:'set-draft',value:'不能覆盖'}),state);
+  state=learningTransition(state,'close-detail');assert.deepEqual({detailOpen:state.detailOpen,draft:state.draft,confirmed:state.confirmed},{detailOpen:false,draft:'',confirmed:false});
+});
+
+test('对照确认后旋钮浏览长内容，短按返回选牌',()=>{
+  const app=readFileSync(new URL('../dist/app.mjs',import.meta.url),'utf8');
+  assert.match(app,/learning\.confirmed&&\['left','right'\]\.includes\(action\)\)return scrollLearningContent/);
+  assert.match(app,/learning\.confirmed&&action==='confirm'\)return resetLearningCardSelection/);
+  assert.match(app,/overlay\.scrollBy\(\{top:action==='right'\?distance:-distance,behavior\}\)/);
 });
 
 test('刷新只恢复学习位置和详情，草稿与对照结果清除',()=>{

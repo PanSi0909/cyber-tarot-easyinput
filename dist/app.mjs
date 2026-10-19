@@ -3,7 +3,7 @@ import {interpretCard,getCardKnowledge} from './tarot-knowledge.mjs?v=0.8.0';
 import {buildReadingInput,readingFingerprint,requestInitialReading,requestFollowUp,createReadingSession,appendFollowUp,restoreReadingSession,mockReadingProvider,apiReadingProvider} from './ai-reading.mjs?v=0.8.0';
 import {historyRecordSchemaVersion,createHistoryRecord,upsertHistoryRecord,serializeHistoryBackup,restoreHistoryBackup,openHistoryDatabase,listHistoryRecords,saveHistoryRecord,replaceHistoryRecords} from './history.mjs?v=0.9.0';
 import {renderCardBack,renderCardFace} from './card-visuals.mjs?v=1.4.0';
-import {freshLearning,restoreLearning,serializeLearning,learningTransition,compareLearningInterpretation} from './learning.mjs?v=1.0.0';
+import {freshLearning,restoreLearning,serializeLearning,learningTransition,compareLearningInterpretation} from './learning.mjs?v=1.0.1';
 import {insightRanges,freshInsightState,insightTransition,analyzeHistory,buildInsightSummary,requestInsight,mockInsightProvider,apiInsightProvider,createInsightReport,openInsightDatabase,saveInsightReport} from './insights.mjs?v=1.5.0';
 const $=id=>document.getElementById(id);
 const storageKey='cyber-tarot.v1',greetingKey='cyber-tarot.greeting.v1',readingStorageKey='cyber-tarot.reading.v1',learningStorageKey='cyber-tarot.learning.v1';
@@ -247,8 +247,8 @@ function renderInsights(){
   const range=insightRanges[insights.rangeIndex],labels={idle:'等待选择',loading:'正在生成',ready:'已生成',insufficient:'数据不足',error:'失败'};
   $('insights-status').dataset.state=insights.status;$('insights-status').textContent=labels[insights.status]||insights.status;
   $('insights-message').textContent=insights.status==='idle'?`${range.label} · 选择后短按旋钮或点击生成。`:insights.status==='loading'?`正在根据 ${range.label} 的客观统计生成反思洞察…`:insights.status==='insufficient'?`当前只有 ${insights.analysis?.recordCount||0} 条记录；至少还需要 ${insights.analysis?.needed||0} 条完整记录。`:insights.status==='error'?insights.error:`${range.label}的周期洞察已生成。`;
-  const ready=insights.status==='ready';$('insights-knob-context').textContent=ready?'旋钮左右 · 浏览洞察；短按 · 重新选择范围':'旋钮左右 · 选择时间范围；短按 · 生成洞察';
-  $('insights-generate').disabled=insights.status==='loading'||!historyLoaded;$('insights-generate').textContent=insights.status==='loading'?'正在生成…':ready?'重新选择时间范围（鼠标／触控）':'使用当前范围生成（鼠标／触控）';$('insights-retry').hidden=insights.status!=='error';
+  const browsing=['ready','insufficient'].includes(insights.status);$('insights-knob-context').textContent=browsing?'旋钮左右 · 浏览统计与洞察；短按 · 重新选择范围':'旋钮左右 · 选择时间范围；短按 · 生成洞察';
+  $('insights-generate').disabled=insights.status==='loading'||!historyLoaded;$('insights-generate').textContent=insights.status==='loading'?'正在生成…':browsing?'重新选择时间范围（鼠标／触控）':'使用当前范围生成（鼠标／触控）';$('insights-retry').hidden=insights.status!=='error';
   const analysis=insights.analysis;$('insights-statistics').hidden=!analysis;
   if(analysis){
     $('insights-record-count').textContent=`${analysis.recordCount} 条记录`;$('insights-start').textContent=formatInsightDate(analysis.range.start);$('insights-end').textContent=formatInsightDate(analysis.range.end);$('insights-sample-count').textContent=analysis.sufficient?`${analysis.recordCount} 条 · 达到最小样本`:`${analysis.recordCount} 条 · 还差 ${analysis.needed} 条`;
@@ -270,15 +270,16 @@ function toggleInsights(source){
 }
 function scrollInsightContent(action,source){
   const overlay=$('insights-overlay'),distance=Math.max(240,overlay.clientHeight*.55),behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
-  overlay.scrollBy({top:action==='right'?distance:-distance,behavior});$('insights-message').textContent=`${source} · 正在${action==='right'?'向下':'向上'}浏览洞察；短按旋钮可重新选择时间范围。`;return true;
+  overlay.scrollBy({top:action==='right'?distance:-distance,behavior});$('insights-message').textContent=`${source} · 正在${action==='right'?'向下':'向上'}浏览统计与洞察；短按旋钮可重新选择时间范围。`;return true;
 }
 function resetInsightRangeSelection(source){
   insightGenerationToken++;insights=insightTransition(insights,{type:'select-range',index:insights.rangeIndex});renderInsights();$('insights-message').textContent=`${source} · 已返回时间范围选择。`;
   const behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';$('insights-overlay').scrollTo({top:0,behavior});requestAnimationFrame(commandFocus);return true;
 }
 function performInsightAction(action,source){
-  if(insights.status==='ready'&&['left','right'].includes(action))return scrollInsightContent(action,source);
-  if(insights.status==='ready'&&action==='confirm')return resetInsightRangeSelection(source);
+  const browsing=['ready','insufficient'].includes(insights.status);
+  if(browsing&&['left','right'].includes(action))return scrollInsightContent(action,source);
+  if(browsing&&action==='confirm')return resetInsightRangeSelection(source);
   if(['left','right'].includes(action)){insightGenerationToken++;insights=insightTransition(insights,action);renderInsights();$('insights-message').textContent=`${source} · 已选择${insightRanges[insights.rangeIndex].label}，短按旋钮生成。`;return true;}
   if(action==='confirm'){void generateInsight();return true;}
   return false;
@@ -329,7 +330,7 @@ function renderLearning(){
   $('learning-open').disabled=open;$('learning-open').innerHTML=open?'当前牌已打开 <kbd>短按</kbd>':'打开当前牌 <kbd>短按</kbd>';
   $('learning-draft').value=learning.draft;$('learning-draft').disabled=confirmed;$('learning-clear').disabled=confirmed||!learning.draft;$('learning-submit').disabled=confirmed||!learning.draft.trim();renderLearningActionSelection();
   $('learning-reference').hidden=!confirmed;$('learning-status').textContent=confirmed?'已确认。本页对照来自本地塔罗知识，不会调用付费模型。':'可以继续修改；确认后才显示参考解读。';
-  $('learning-knob-context').textContent=open&&learning.draft.trim()?'旋钮左右 · 选择清空或确认；短按执行':open?'旋钮左右 · 换牌并重新观察':'旋钮左右 · 循环浏览 78 张牌';
+  $('learning-knob-context').textContent=confirmed?'旋钮左右 · 浏览参考对照；短按 · 返回选牌':open&&learning.draft.trim()?'旋钮左右 · 选择清空或确认；短按执行':open?'旋钮左右 · 换牌并重新观察':'旋钮左右 · 循环浏览 78 张牌';
   if(!confirmed)return;
   const comparison=compareLearningInterpretation(learning.draft,card,knowledge);
   learningList('learning-visuals',knowledge.visuals);$('learning-base').textContent=`${knowledge.archetype} · ${knowledge.element}元素 · ${knowledge.domain}`;
@@ -346,11 +347,21 @@ function toggleLearning(source){
 }
 function focusLearningDraft(source){
   if(!learning.detailOpen){$('learning-status').textContent=`${source} · 先短按旋钮打开当前牌，再输入自己的理解。`;return false;}
-  if(learning.confirmed){$('learning-status').textContent='本张对照已经确认；旋转到下一张牌可开始新的练习。';return false;}
+  if(learning.confirmed){$('learning-status').textContent='本张对照已经显示；旋钮左右浏览，短按返回选牌。';return false;}
   settleLearningDraft();$('learning-status').textContent=`${source} · 输入已定位到“我的理解”；确认以前仍可修改。`;return true;
+}
+function scrollLearningContent(action,source){
+  const overlay=$('learning-overlay'),distance=Math.max(240,overlay.clientHeight*.55),behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+  overlay.scrollBy({top:action==='right'?distance:-distance,behavior});$('learning-status').textContent=`${source} · 正在${action==='right'?'向下':'向上'}浏览参考对照；短按旋钮可返回选牌。`;return true;
+}
+function resetLearningCardSelection(source){
+  const next=learningTransition(learning,'close-detail',cards.length);if(next===learning)return false;learning=next;learningActionIndex=1;saveLearning();renderLearning();
+  const behavior=matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';$('learning-overlay').scrollTo({top:0,behavior});$('learning-status').textContent=`${source} · 已返回选牌；旋钮左右可浏览 78 张牌。`;requestAnimationFrame(commandFocus);return true;
 }
 function performLearningAction(action,source){
   if(action==='question')return focusLearningDraft(source);
+  if(learning.confirmed&&['left','right'].includes(action))return scrollLearningContent(action,source);
+  if(learning.confirmed&&action==='confirm')return resetLearningCardSelection(source);
   if(learning.detailOpen&&!learning.confirmed&&learning.draft.trim()&&['left','right'].includes(action)){
     learningActionIndex=action==='left'?0:1;renderLearningActionSelection();$('learning-knob-context').textContent=`已选择“${learningActionIndex===0?'清空':'确认并查看对照'}” · 短按旋钮执行`;$('learning-status').textContent=`${source} · 当前操作：${learningActionIndex===0?'清空草稿':'确认并查看对照'}。`;return true;
   }
