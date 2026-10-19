@@ -60,3 +60,9 @@ test('V2 生产牌框只旋转插画并保持英文标题正向',()=>{
   assert.match(styles,/\.orientation-reversed \.illustration\{rotate:0deg;transform:rotate\(180deg\)\}/);
   assert.match(styles,/\.orientation-reversed\.production-v2 \.face-caption\{rotate:0deg;transform:none\}/);
 });
+
+test('揭牌结果在每张牌上明确标出正逆位',()=>{
+  const app=readFileSync(new URL('../dist/app.mjs',import.meta.url),'utf8');
+  assert.match(app,/orientationLabel=orientation==='reversed'\?'↓ 逆位':'↑ 正位'/);
+  assert.match(app,/result-card-position[^`]+\$\{orientationLabel\}/);
+});
