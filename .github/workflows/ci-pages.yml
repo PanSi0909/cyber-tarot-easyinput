@@ -1,0 +1,62 @@
+name: CI and Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          for file in dist/*.mjs server/*.mjs server.mjs; do
+            node --check "$file"
+          done
+      - name: Run website tests
+        run: node --test tests/*.test.mjs
+
+  firmware-host-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure host tests
+        run: cmake -S case-studies/easyinput-host-action-v1/host_test -B build/easyinput-host -DCMAKE_BUILD_TYPE=Debug
+      - name: Build host tests
+        run: cmake --build build/easyinput-host --parallel 2
+      - name: Run host tests
+        run: ctest --test-dir build/easyinput-host --output-on-failure
+
+  deploy-pages:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [web-tests, firmware-host-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

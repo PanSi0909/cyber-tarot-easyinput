@@ -4,3 +4,19 @@
 .env
 .env.*
 !.env.example
+
+# Monorepo build outputs and local tools
+build/
+build-*/
+**/build/
+**/build-*/
+**/managed_components/
+**/sdkconfig
+**/sdkconfig.old
+**/compile_commands.json
+*.bin
+*.elf
+*.map
+*.log
+*.pyc
+__pycache__/
