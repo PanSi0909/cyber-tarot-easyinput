@@ -2,9 +2,24 @@
 
 一个由 EasyInput V2.0 八键、旋钮和语音输入驱动的赛博塔罗网页，也是一次从 AI 硬件协议实践走向完整交互产品的课程项目。
 
-[正式站点](https://cyber-tarot-between-signals.a0921093504.chatgpt.site/) · [GitHub Pages 零成本演示](https://pansi0909.github.io/cyber-tarot-easyinput/) · [系统架构](docs/architecture.md) · [学习路线](docs/learning-guide.md)
+[正式站点](https://cyber-tarot-between-signals.a0921093504.chatgpt.site/) · [GitHub Pages 零成本演示](https://pansi0909.github.io/cyber-tarot-easyinput/) · [新手实操](docs/getting-started.md) · [资料中心](docs/README.md)
 
 ![赛博塔罗项目视觉](dist/card-art.png)
+
+## 第一次来到这里
+
+你不需要先懂硬件、塔罗或 AI 接口。按目标选择入口：
+
+| 我想…… | 从这里开始 |
+|---|---|
+| 先体验作品，不安装任何东西 | [打开 GitHub Pages](https://pansi0909.github.io/cyber-tarot-easyinput/) |
+| 跟着步骤在本地运行 | [新手实操指南](docs/getting-started.md) |
+| 理解硬件、App、系统和网页 | [系统架构](docs/architecture.md) |
+| 阅读第 2–8 课真实开发过程 | [课程学习路线](docs/learning-guide.md) |
+| 查找全部资料和证据 | [资料中心](docs/README.md) |
+| 深入固件与 Host Action | [第 2 课复刻案例](case-studies/easyinput-host-action-v1/README.md) |
+
+没有 EasyInput 开发板也能完成全部网页主流程；硬件路线是可选进阶。
 
 ## 这个仓库包含什么
 
@@ -83,7 +98,7 @@ node --env-file=.env.local server.mjs
 node --test tests/*.test.mjs
 ```
 
-当前基线为 90 项测试全部通过。
+当前基线为 93 项测试全部通过、没有跳过项；最新结果以 `main` 分支 CI 输出为准。
 
 ## AI 硬件复刻案例
 
@@ -105,6 +120,7 @@ node --test tests/*.test.mjs
 - [`QA.md`](QA.md)：回归、浏览器和实体开发板验收记录。
 - [`docs/architecture.md`](docs/architecture.md)：硬件到网页的数据链路。
 - [`docs/learning-guide.md`](docs/learning-guide.md)：第 2–8 课学习路线。
+- [`docs/README.md`](docs/README.md)：按学习目标组织的完整资料入口。
 
 ## 隐私与安全
 
