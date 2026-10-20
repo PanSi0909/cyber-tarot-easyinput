@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 
 const read=name=>readFileSync(new URL(`../${name}`,import.meta.url),'utf8');
 const readBytes=name=>readFileSync(new URL(`../${name}`,import.meta.url));
@@ -60,7 +60,7 @@ test('最后五张原始样卡已通过最终牌框正逆位复核',()=>{
   assert.match(script,/pilot-layout-review-gallery/);
   for(const card of finalFive){
     assert.match(script,new RegExp(`id:'${card.id}'`));
-    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+    assert.deepEqual(jpegDimensions(readBytes(card.sourceAsset)),{width:1024,height:1536});
   }
 });
 
@@ -73,39 +73,39 @@ test('网页优化副本覆盖 78 张并保持 2:3 尺寸',()=>{
   }
 });
 
-test('第一批十张牌均为 1024 × 1536 JPEG 并进入独立评审页',()=>{
+test('第一批十张网页牌面均为 640 × 960 JPEG 并进入独立评审页',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
   const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
   assert.match(page,/首批十张 · 正逆位/);
   for(const card of manifest.batch01Cards){
     assert.match(script,new RegExp(`id:'${card.id}'`));
-    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:640,height:960});
   }
 });
 
-test('第二批二十张牌均为 1024 × 1536 JPEG 并已通过',()=>{
+test('第二批二十张网页牌面均为 640 × 960 JPEG 并已通过',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
   const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
   assert.match(page,/第二批二十张 · 正逆位/);
   for(const card of manifest.batch02Cards){
     assert.match(script,new RegExp(`id:'${card.id}'`));
     assert.equal(card.status,'approved');
-    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:640,height:960});
   }
 });
 
-test('第三批二十张牌均为 1024 × 1536 JPEG 并已通过',()=>{
+test('第三批二十张网页牌面均为 640 × 960 JPEG 并已通过',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
   const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
   assert.match(page,/第三批二十张 · 正逆位/);
   for(const card of manifest.batch03Cards){
     assert.match(script,new RegExp(`id:'${card.id}'`));
     assert.equal(card.status,'approved');
-    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:640,height:960});
   }
 });
 
-test('第四批二十张牌均为 1024 × 1536 JPEG 并已通过',()=>{
+test('第四批二十张网页牌面均为 640 × 960 JPEG 并已通过',()=>{
   const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
   const page=read('dist/card-pilot.html'),script=read('dist/card-pilot.mjs');
   assert.match(page,/第四批二十张 · 正逆位/);
@@ -113,6 +113,13 @@ test('第四批二十张牌均为 1024 × 1536 JPEG 并已通过',()=>{
   for(const card of manifest.batch04Cards){
     assert.match(script,new RegExp(`id:'${card.id}'`));
     assert.equal(card.status,'approved');
-    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:1024,height:1536});
+    assert.deepEqual(jpegDimensions(readBytes(card.asset)),{width:640,height:960});
   }
+});
+
+test('正式发布树只保留八张旧牌框原始样卡',()=>{
+  const manifest=JSON.parse(read('design/card-art-v2-manifest.json'));
+  const originals=readdirSync(new URL('../dist/assets/course-6/cards/',import.meta.url)).filter(name=>name.endsWith('.jpg')).sort();
+  const expected=manifest.pilotCards.map(card=>card.sourceAsset.split('/').at(-1)).sort();
+  assert.deepEqual(originals,expected);
 });

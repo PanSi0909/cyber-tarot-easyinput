@@ -102,7 +102,7 @@ const batch04ReviewCandidates=[
 
 function v2Frame(card,orientation){
   const label=orientation==='reversed'?'逆位':'正位';
-  return `<figure class="frame-state"><div class="v2-card orientation-${orientation}"><div class="v2-art-window"><img class="v2-artwork" src="./assets/course-6/cards/${card.id}.jpg" alt=""></div><div class="v2-caption">${card.en}</div></div><figcaption>${label} · ${orientation.toUpperCase()}</figcaption></figure>`;
+  return `<figure class="frame-state"><div class="v2-card orientation-${orientation}"><div class="v2-art-window"><img class="v2-artwork" src="./assets/course-6/cards-v2-web/${card.id}.jpg" alt=""></div><div class="v2-caption">${card.en}</div></div><figcaption>${label} · ${orientation.toUpperCase()}</figcaption></figure>`;
 }
 
 function appendReviewCard(target,candidate){
