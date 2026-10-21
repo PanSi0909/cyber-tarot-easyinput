@@ -17,6 +17,7 @@
 | 理解硬件、App、系统和网页 | [系统架构](docs/architecture.md) |
 | 阅读第 2–8 课真实开发过程 | [课程学习路线](docs/learning-guide.md) |
 | 查找全部资料和证据 | [资料中心](docs/README.md) |
+| 下载高清原始视觉素材 | [原始素材归档](docs/source-assets.md) |
 | 深入固件与 Host Action | [第 2 课复刻案例](case-studies/easyinput-host-action-v1/README.md) |
 
 没有 EasyInput 开发板也能完成全部网页主流程；硬件路线是可选进阶。
@@ -116,6 +117,7 @@ node --test tests/*.test.mjs
 - [`dist/`](dist/)：可直接发布的静态网站。
 - [`server/`](server/)：服务端 Provider、输入校验与提示词。
 - [`design/`](design/)：牌面、交互和资产来源记录。
+- [`docs/source-assets.md`](docs/source-assets.md)：高清原始视觉素材的 Release 下载与校验说明。
 - [`COURSE-8-DELIVERY.md`](COURSE-8-DELIVERY.md)：课程交付与演示脚本。
 - [`QA.md`](QA.md)：回归、浏览器和实体开发板验收记录。
 - [`docs/architecture.md`](docs/architecture.md)：硬件到网页的数据链路。

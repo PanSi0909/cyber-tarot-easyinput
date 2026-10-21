@@ -12,6 +12,7 @@
 | 理解软硬件关系 | [系统架构](architecture.md) | 分清固件、EasyInput App、操作系统和网页的职责 |
 | 按课程学习开发 | [第 2–8 课学习路线](learning-guide.md) | 从协议实践逐步走到完整产品 |
 | 查看真实验收 | [QA 记录](../QA.md) | 浏览器、自动测试和实体开发板的历史证据 |
+| 下载高清原始素材 | [原始素材归档](source-assets.md) | 获取不进入 Git 历史的 PNG 原图与 SHA-256 校验清单 |
 | 学习固件开发 | [Host Action v1 案例](../case-studies/easyinput-host-action-v1/README.md) | 完整可构建的第 2 课复刻案例 |
 | 参与改进 | [贡献指南](../CONTRIBUTING.md) | 提交问题、文档修正或小范围改进 |
 
@@ -30,6 +31,7 @@
 - `QA.md`：按时间积累的详细验收证据，不适合作为第一篇教程。
 - `COURSE-8-DELIVERY.md`：结课交付、键位表和演示脚本。
 - `design/`：视觉方案、牌面生产和设计决策。
+- `docs/source-assets.md`：大体积原始视觉素材的下载、许可与校验方式。
 - `case-studies/`：可以独立学习的硬件复刻案例。
 - Git 历史：查看每一阶段真实发生了哪些修改。
 

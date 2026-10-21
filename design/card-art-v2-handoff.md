@@ -4,7 +4,7 @@
 
 三类最终牌框、四批 70 张原创牌面及最后 5 张原始样卡均已通过。当前 78 张资产全部标记为 `approved`，生产牌面已映射至网页优化副本并合并到 `main`。
 
-四批提示词和构图规则分别见 `design/card-art-v2-batch-01-prompts.md` 至 `design/card-art-v2-batch-04-prompts.md`。生产与批次验收使用 `dist/assets/course-6/cards-v2-web/` 中的 640 × 960 网页副本；`dist/assets/course-6/cards/` 仅保留旧牌框对照使用的 8 张原始样卡。其余 1024 × 1536 原图保留在生成批次对应的 Git 历史中，不进入当前正式发布包。
+四批提示词和构图规则分别见 `design/card-art-v2-batch-01-prompts.md` 至 `design/card-art-v2-batch-04-prompts.md`。生产与批次验收使用 `dist/assets/course-6/cards-v2-web/` 中的 640 × 960 网页副本；`dist/assets/course-6/cards/` 仅保留旧牌框对照使用的 8 张原始样卡。其余高清原图不进入 Git 历史，统一通过 [`docs/source-assets.md`](../docs/source-assets.md) 指向的 GitHub Release 归档。
 
 ## 已确认的下一版牌框要求
 
@@ -17,7 +17,7 @@
 
 ## 当前资产
 
-共同提示词和逐张构图说明见 `design/card-pilot-prompts.md`。原始 8 张样卡位于 `dist/assets/course-6/cards/`；四批正式牌面使用 `dist/assets/course-6/cards-v2-web/`，原始生成文件可从对应批次的 Git 历史恢复。
+共同提示词和逐张构图说明见 `design/card-pilot-prompts.md`。原始 8 张样卡位于 `dist/assets/course-6/cards/`；四批正式牌面使用 `dist/assets/course-6/cards-v2-web/`，原始生成文件见[原始素材归档](../docs/source-assets.md)。
 
 第四批包括：
 
